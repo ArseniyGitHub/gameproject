@@ -12,9 +12,12 @@ if (POLICY CMP0141)
 endif()
 
 project ("gameproject")
+file(GLOB_RECURSE SOURCES "src/*.cpp" "include/*.h")
+
 
 # Добавьте источник в исполняемый файл этого проекта.
-add_executable (gameproject  "main.cpp")
+add_executable (gameproject  "main.cpp" ${SOURCES})
+target_include_directories("gameproject" PRIVATE "include")
 find_package(SFML COMPONENTS system window graphics CONFIG REQUIRED)
 target_link_libraries(gameproject PRIVATE sfml-system sfml-network sfml-graphics sfml-window)
 #target_link_libraries(CMakeProject2 PRIVATE sfml-main)
