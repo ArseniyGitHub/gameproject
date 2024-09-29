@@ -8,6 +8,7 @@
 #include <memory>
 #include <box2d/box2d.h>
 #include <thread>
+#include "UserInput.h"
 #define cu8(str) reinterpret_cast<const char*>(u8##str)
 
 class Game {
@@ -19,6 +20,7 @@ private:
 	std::thread* phisicsThread;
 	std::thread* inputListenerThread;
 	std::thread* networkingThread;
+	UserInput input;
 	bool _gameStarted;
 	void updatePhysics();
 	void render();
@@ -31,3 +33,4 @@ public:
 	void start();
 	~Game();
 };
+

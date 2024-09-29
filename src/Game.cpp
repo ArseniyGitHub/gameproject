@@ -14,6 +14,11 @@ void Game::render() {
 	spdlog::info("Graphics thread was started");
 	sf::Clock time;
 	while (Game::_gameStarted) {
+		userInputListener();
+		if (input._windowClosed) {
+			_gameStarted = false;
+			_window->close();
+		}
 		ImGui::SFML::Update(*_window, time.restart());
 		_window->clear();
 		for (const auto& elem : Game::_gameObjects) {
@@ -33,11 +38,14 @@ void Game::updatePhysics() {
 	}
 }
 
-Game::Game() : world({0, 10}), _window((new sf::RenderWindow(sf::VideoMode(800, 800), "Game"))) {
+Game::Game() : world({0, 10}) {
+	_window = (new sf::RenderWindow(sf::VideoMode(800, 800), "Game", sf::Style::Default, sf::ContextSettings(24, 8, 8)));
 	initImGui();
+
 }
 
-Game::Game(int argc, char* argv[]) : world({ 0, 10 }), _window((new sf::RenderWindow(sf::VideoMode(800, 800), "Game"))) {
+Game::Game(int argc, char* argv[]) : world({ 0, 10 }), _window((new sf::RenderWindow(sf::VideoMode(800, 800), "Game", sf::Style::Default, sf::ContextSettings(24, 8, 8)))) {
+	_window = (new sf::RenderWindow(sf::VideoMode(800, 800), "Game", sf::Style::Default, sf::ContextSettings(24, 8, 8)));
 	initImGui();
 }
 
@@ -63,20 +71,17 @@ Game::~Game() {
 }
 
 void Game::userInputListener() {
-	spdlog::info("Input listener thread was started");
 	sf::Clock time;
-	while(_gameStarted){
 		sf::Event event;
 		while (_window->pollEvent(event)) {
 			switch (event.type) {
 			case sf::Event::Closed:
-				_window->close();
+				input._windowClosed = true;
 				break;
 
 			}
 			ImGui::SFML::ProcessEvent(*_window, event);
 		}
-	}
 }
 
 void Game::network() {
@@ -88,11 +93,9 @@ void Game::network() {
 
 void Game::start() {
 	_gameStarted = true;
-	Game::graphicsThread = new std::thread([&]() {render(); });
-	Game::phisicsThread = new std::thread([&]() {updatePhysics(); });
-	Game::inputListenerThread = new std::thread([&]() {userInputListener(); });
-	Game::networkingThread = new std::thread([&]() {network(); });
-	while (_gameStarted) {
-
-	}
+	//Game::graphicsThread = new std::thread(&Game::render, this);
+	Game::phisicsThread = new std::thread([&, this]() {this->updatePhysics(); });
+	//Game::inputListenerThread = new std::thread(&Game::userInputListener, this);
+	Game::networkingThread = new std::thread([&, this]() {this->network(); });
+	render();
 }
