@@ -29,6 +29,8 @@ find_package(imgui CONFIG REQUIRED)
 target_link_libraries(gameproject PRIVATE imgui::imgui)
 find_package(ImGui-SFML CONFIG REQUIRED)
 target_link_libraries(gameproject PRIVATE ImGui-SFML::ImGui-SFML)
+find_package(nlohmann_json CONFIG REQUIRED)
+target_link_libraries(gameproject PRIVATE nlohmann_json::nlohmann_json)
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET gameproject PROPERTY CXX_STANDARD 20)

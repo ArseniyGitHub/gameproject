@@ -1,5 +1,8 @@
 #pragma once
-#include "Window.h"
+#include <imgui.h>
+#include <imgui-SFML.h>
+#include <SFML/Graphics.hpp>
+#include <spdlog/spdlog.h>
 #include "GameObjects/GameObject.h"
 #include <vector>
 #include <memory>
@@ -9,7 +12,7 @@
 
 class Game {
 private:
-	Window _window;
+	sf::RenderWindow* _window;
 	std::vector<std::shared_ptr<GameObject>> _gameObjects;
 	b2World world;
 	std::thread* graphicsThread;
@@ -21,9 +24,10 @@ private:
 	void render();
 	void userInputListener();
 	void network();
+	void initImGui();
 public:
-	void mainLoop();
 	Game();
 	Game(int argc, char* argv[]);
 	void start();
+	~Game();
 };

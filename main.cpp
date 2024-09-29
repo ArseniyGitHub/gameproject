@@ -1,9 +1,9 @@
-#include "Window.h"
+#include "Game.h"
 #include <spdlog/spdlog.h>
 
 int main(int argc, char* args[]) {
-	Window _window;
-	_window.run();
+	Game _window;
+	_window.start();
 	spdlog::info("Window is closed. Why you close me?");
 	return 0;
 }
