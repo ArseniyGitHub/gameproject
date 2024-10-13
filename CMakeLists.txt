@@ -4,7 +4,20 @@
 cmake_minimum_required (VERSION 3.8)
 
 # Включение горячей перезагрузки для компиляторов MSVC, если поддерживается.
-include("D:/libs/vcpkg/scripts/buildsystems/vcpkg.cmake")
+if(DEFINED ENV{VCPKG_HOME})
+    
+    include("$ENV{VCPKG_HOME}/scripts/buildsystems/vcpkg.cmake")
+else()
+    include("$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake")
+endif()
+set     (VCPKG_INCLUDE_DIR "$ENV{VCPKG_HOME}/installed/${VCPKG_TARGET_TRIPLET}/include")
+set         (VCPKG_LIB_DIR "$ENV{VCPKG_HOME}/installed/${VCPKG_TARGET_TRIPLET}/lib")
+set             (VCPKG_BIN_DIR "$ENV{VCPKG_HOME}/installed/${VCPKG_TARGET_TRIPLET}/bin")
+set (VCPKG_DEBUG_BIN_DIR "$ENV{VCPKG_HOME}/installed/${VCPKG_TARGET_TRIPLET}/debug/bin")
+set (VCPKG_DEBUG_LIB_DIR "$ENV{VCPKG_HOME}/installed/${VCPKG_TARGET_TRIPLET}/debug/lib")
+include_directories(VCPKG_INCLUDE_DIR)
+add_subdirectory("modules/Candle")
+
 
 if (POLICY CMP0141)
   cmake_policy(SET CMP0141 NEW)
@@ -14,26 +27,58 @@ endif()
 project ("gameproject")
 file(GLOB_RECURSE SOURCES "src/*.cpp" "include/*.h")
 
+find_package(spdlog CONFIG REQUIRED)
+find_package(box2d CONFIG REQUIRED)
+find_package(SFML COMPONENTS system window graphics CONFIG REQUIRED)
+find_package(imgui CONFIG REQUIRED)
+find_package(ImGui-SFML CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 
 # Добавьте источник в исполняемый файл этого проекта.
 add_executable (gameproject  "main.cpp" ${SOURCES})
+add_executable  (thor_test    "tests/ThorTest.cpp")
+add_executable (candle_test "tests/CandleTest.cpp")
+
 target_include_directories("gameproject" PRIVATE "include")
-find_package(spdlog CONFIG REQUIRED)
+#########################################################################################################################################################################################################
 target_link_libraries(gameproject PRIVATE spdlog::spdlog)
-find_package(box2d CONFIG REQUIRED)
 target_link_libraries(gameproject PRIVATE box2d::box2d)
-find_package(SFML COMPONENTS system window graphics CONFIG REQUIRED)
 target_link_libraries(gameproject PRIVATE sfml-system sfml-network sfml-graphics sfml-window)
-#target_link_libraries(CMakeProject2 PRIVATE sfml-main)
-find_package(imgui CONFIG REQUIRED)
 target_link_libraries(gameproject PRIVATE imgui::imgui)
-find_package(ImGui-SFML CONFIG REQUIRED)
 target_link_libraries(gameproject PRIVATE ImGui-SFML::ImGui-SFML)
-find_package(nlohmann_json CONFIG REQUIRED)
 target_link_libraries(gameproject PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(gameproject PRIVATE Candle-s)
+
+
+
+
+target_link_libraries(thor_test   PRIVATE sfml-system sfml-graphics sfml-window)
+target_link_libraries(candle_test PRIVATE sfml-system sfml-graphics sfml-window Candle-s)
+
+
+
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_link_libraries("gameproject" PRIVATE "${VCPKG_DEBUG_LIB_DIR}/thor-d.lib")
+    target_link_libraries(thor_test PRIVATE "${VCPKG_DEBUG_LIB_DIR}/thor-d.lib")
+else()
+    target_link_libraries("gameproject" PRIVATE "${VCPKG_LIB_DIR}/thor.lib")
+    target_link_libraries(thor_test PRIVATE "${VCPKG_LIB_DIR}/thor.lib")
+endif()
+set(THOR_DLL_PATH_RELEASE "${VCPKG_BIN_DIR}/thor.dll")
+set(THOR_DLL_PATH_DEBUG "${VCPKG_DEBUG_BIN_DIR}/thor-d.dll")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET gameproject PROPERTY CXX_STANDARD 20)
 endif()
+
+add_custom_command(TARGET gameproject POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<$<CONFIG:Debug>:${THOR_DLL_PATH_DEBUG}>
+    $<$<CONFIG:Release>:${THOR_DLL_PATH_RELEASE}>
+    $<TARGET_FILE_DIR:gameproject>
+)
+
+
 
 # TODO: Добавьте тесты и целевые объекты, если это необходимо.
