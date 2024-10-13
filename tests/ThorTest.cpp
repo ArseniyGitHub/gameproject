@@ -1,8 +1,29 @@
 #include <Thor/Animations.hpp>
 #include <SFML/Graphics.hpp>
 #include <Thor/Resources.hpp>
+#include <cstdint>
+
+typedef unsigned __int64 ui64;
+typedef unsigned __int32 ui32;
+typedef unsigned __int16 ui16;
+typedef unsigned  __int8  ui8;
+typedef signed    __int64 i64;
+typedef signed    __int32 i32;
+typedef signed    __int16 i16;
+typedef signed     __int8  i8;
+typedef char                c;
+typedef wchar_t          wc_t;
+typedef const wchar_t   cwc_t;
+typedef const char         cc;
+
+template <ui64 sz> ui64 getsize(cc txt[sz]) {
+	return sz;
+}
 
 int main() {
+
+	
+
 	sf::RenderWindow window(sf::VideoMode(512, 512), L"что-то");
 	sf::Texture at;
 	at.loadFromFile("assets/a.png");
