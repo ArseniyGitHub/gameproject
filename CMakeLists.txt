@@ -33,30 +33,35 @@ find_package(SFML COMPONENTS system window graphics CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(ImGui-SFML CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
+find_package(unofficial-sqlite3 CONFIG REQUIRED)
+find_package(implot CONFIG REQUIRED)
 
 # Добавьте источник в исполняемый файл этого проекта.
 add_executable (gameproject  "main.cpp" ${SOURCES})
 add_executable  (thor_test    "tests/ThorTest.cpp")
 add_executable (candle_test "tests/CandleTest.cpp")
+add_executable(network_test "tests/NetWorkTest.cpp")
 
 target_include_directories("gameproject" PRIVATE "include")
 #########################################################################################################################################################################################################
 target_link_libraries(gameproject PRIVATE spdlog::spdlog)
+target_link_libraries(network_test PRIVATE spdlog::spdlog)
 target_link_libraries(gameproject PRIVATE box2d::box2d)
 target_link_libraries(gameproject PRIVATE sfml-system sfml-network sfml-graphics sfml-window)
 target_link_libraries(gameproject PRIVATE imgui::imgui)
 target_link_libraries(gameproject PRIVATE ImGui-SFML::ImGui-SFML)
 target_link_libraries(gameproject PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(gameproject PRIVATE Candle-s)
-
+target_link_libraries(gameproject PRIVATE unofficial::sqlite3::sqlite3)
+target_link_libraries(gameproject PRIVATE implot::implot)
 
 
 
 target_link_libraries(thor_test   PRIVATE sfml-system sfml-graphics sfml-window)
 target_link_libraries(candle_test PRIVATE sfml-system sfml-graphics sfml-window Candle-s)
+##################################################################################################################################################################################################################################################################################################################################################################################################################
 
-
-
+target_link_libraries(network_test PRIVATE sfml-system sfml-graphics sfml-window implot::implot ImGui-SFML::ImGui-SFML nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui sfml-network)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_link_libraries("gameproject" PRIVATE "${VCPKG_DEBUG_LIB_DIR}/thor-d.lib")
