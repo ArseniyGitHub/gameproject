@@ -75,6 +75,9 @@ set(THOR_DLL_PATH_DEBUG "${VCPKG_DEBUG_BIN_DIR}/thor-d.dll")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET gameproject PROPERTY CXX_STANDARD 20)
+  set_property(TARGET thor_test PROPERTY CXX_STANDARD 20)
+  set_property(TARGET candle_test PROPERTY CXX_STANDARD 20)
+  set_property(TARGET network_test3 PROPERTY CXX_STANDARD 20)
 endif()
 
 add_custom_command(TARGET gameproject POST_BUILD
@@ -83,6 +86,10 @@ add_custom_command(TARGET gameproject POST_BUILD
     $<$<CONFIG:Release>:${THOR_DLL_PATH_RELEASE}>
     $<TARGET_FILE_DIR:gameproject>
 )
+
+set(SOURSE_DIR "${CMAKE_SOURCE_DIR}/assets")
+set(DESTINATION_DIR "${CMAKE_BINARY_DIR}")
+file(COPY ${SOURSE_DIR} DESTINATION ${DESTINATION_DIR})
 
 
 
