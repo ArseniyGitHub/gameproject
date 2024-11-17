@@ -40,12 +40,14 @@ find_package(implot CONFIG REQUIRED)
 add_executable (gameproject  "main.cpp" ${SOURCES})
 add_executable  (thor_test    "tests/ThorTest.cpp")
 add_executable (candle_test "tests/CandleTest.cpp")
-add_executable(network_test3 "tests/NetWorkTest.cpp")
+add_executable(network_test_not_server "tests/not_a_server_data/not a server.cpp" "tests/not_a_server_data/not a server.h" "tests/not_a_server_data/not a server main.cpp")
+add_executable(network_test_server "tests/not_a_client_data/not a client.cpp" "tests/not_a_client_data/not a client.h" "tests/not_a_client_data/not a client main.cpp" "tests/not_a_client_data/not a window.h" "tests/not_a_client_data/not a window.cpp")
 
 target_include_directories("gameproject" PRIVATE "include")
 #########################################################################################################################################################################################################
 target_link_libraries(gameproject PRIVATE spdlog::spdlog)
-target_link_libraries(network_test3 PRIVATE spdlog::spdlog)
+target_link_libraries(network_test_not_server PRIVATE spdlog::spdlog sfml-system sfml-network sfml-graphics sfml-window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot ImGui-SFML::ImGui-SFML)
+target_link_libraries(network_test_server PRIVATE spdlog::spdlog sfml-system sfml-network sfml-graphics sfml-window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot ImGui-SFML::ImGui-SFML)
 target_link_libraries(gameproject PRIVATE box2d::box2d)
 target_link_libraries(gameproject PRIVATE sfml-system sfml-network sfml-graphics sfml-window)
 target_link_libraries(gameproject PRIVATE imgui::imgui)
@@ -61,7 +63,7 @@ target_link_libraries(thor_test   PRIVATE sfml-system sfml-graphics sfml-window)
 target_link_libraries(candle_test PRIVATE sfml-system sfml-graphics sfml-window Candle-s)
 ##################################################################################################################################################################################################################################################################################################################################################################################################################
 
-target_link_libraries(network_test3 PRIVATE sfml-system sfml-graphics sfml-window implot::implot ImGui-SFML::ImGui-SFML nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui sfml-network)
+#target_link_libraries(network_test3 PRIVATE sfml-system sfml-graphics sfml-window implot::implot ImGui-SFML::ImGui-SFML nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui sfml-network)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_link_libraries("gameproject" PRIVATE "${VCPKG_DEBUG_LIB_DIR}/thor-d.lib")
@@ -77,7 +79,8 @@ if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET gameproject PROPERTY CXX_STANDARD 20)
   set_property(TARGET thor_test PROPERTY CXX_STANDARD 20)
   set_property(TARGET candle_test PROPERTY CXX_STANDARD 20)
-  set_property(TARGET network_test3 PROPERTY CXX_STANDARD 20)
+  set_property(TARGET network_test_not_server PROPERTY CXX_STANDARD 20)
+  set_property(TARGET network_test_server PROPERTY CXX_STANDARD 20)
 endif()
 
 add_custom_command(TARGET gameproject POST_BUILD
