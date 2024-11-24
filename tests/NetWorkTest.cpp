@@ -20,7 +20,7 @@ namespace windowParam {
 }
 
 /// <summary>
-/// class a, not a server
+/// class a, server
 /// </summary>
 class Not_A_Server {   
 	std::mutex           messangeMutex;
