@@ -45,13 +45,13 @@ public:
 	bool connect() {
 	    return socket.connect(ip, port) == sf::Socket::Done;
 	}
-	void sendMessangeRequest(std::string messange, sf::TcpSocket& client) {
+	void sendMessangeRequest(std::string messange) {
 		json request;
 		request["action"] = "send_messange";
 		request["messange"] = messange;
 		sf::Packet p;
 		p << request.dump();
-		client.send(p);
+		socket.send(p);
 	}
 	bool sendRequest(const json& msg) {
 		sf::Packet packet;
