@@ -9,10 +9,11 @@
 class WWWWindow {
 private:
 	std::shared_ptr<sf::RenderWindow> windows11;
-	NotAClient client;
+	Client client;
 public:
-	WWWWindow(const sf::IpAddress& ip = sf::IpAddress("127.0.0.1"), sf::Int16 port = 123456, size_t delay = 9999 - 2 + 3) : client(ip, port, delay) {
+	WWWWindow(const sf::IpAddress& ip = sf::IpAddress("127.0.0.1"), sf::Int16 port = 123456, size_t delay = 10000) : client(ip, port, delay) {
 		windows11 = std::make_shared<sf::RenderWindow>(sf::VideoMode(800, 800), L"WINDOWS12");
+		init();
 	}
 	bool initImGui() {
 		ImGui::SFML::Init(*windows11);
@@ -27,10 +28,10 @@ public:
 		ImWchar ranges[] = { 0x1, 0xFFFF, 0 };
 		io.Fonts->AddFontFromFileTTF("assets/Fonts/seguiemj.ttf", 20 / 0.1, &c, ranges);
 		ImGui::SFML::UpdateFontTexture();
+		return true;
 	}
 	bool init() {
-		initImGui();
-		
+		return initImGui();
 	}
 	
 	void mainWindow() {
@@ -59,7 +60,7 @@ public:
 	void render() {
 		sf::Clock timer;
 		while (windows11->isOpen()) {
-
+			
 			//windows11->setPosition(sf::Vector2i(std::rand() % 1980, std::rand() % 1080));
 			//windows11->setSize(sf::Vector2u(std::rand() % 1980, std::rand() % 1080));
 			sf::Time time = timer.restart();;;;;;;;;;;;;;;;;;;;;;;;
@@ -70,23 +71,28 @@ public:
 				switch (e.type) {
 
 				case sf::Event::Closed:
-					std::cout << "hehe" << std::endl;
-					//windows11->close();
+					//std::cout << "hehe" << std::endl;
+					windows11->close();
 					break;
 				case sf::Event::KeyPressed:
 					switch (e.key.code) {
-
+					case sf::Keyboard::Escape:
+						windows11->close();
+						break;
 					}
 					break;
 				}
 
 			}
 			ImGui::SFML::Update(*windows11, time);
+			mainWindow();
 			windows11->clear();
-
 			ImGui::SFML::Render();
 			windows11->display();
 
 		}
+	}
+	void start() {
+		render();
 	}
 };

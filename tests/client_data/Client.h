@@ -20,7 +20,7 @@ using json = nlohmann::json;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-class NotAClient {
+class Client {
 public:
 	enum ConnectionStatus {
 		Connected,
@@ -39,7 +39,7 @@ private:
 
 public:
 	
-	NotAClient(const sf::IpAddress& ip = sf::IpAddress("127.0.0.1"), sf::Int16 port = 123456, size_t delay = 1000) : ip(ip), port(port), delay(delay) {
+	Client(const sf::IpAddress& ip = sf::IpAddress("127.0.0.1"), sf::Int16 port = 123456, size_t delay = 1000) : ip(ip), port(port), delay(delay) {
 		//isStarted = true;
 	}
 	bool connect() {
@@ -61,8 +61,21 @@ public:
 	bool receiveResponse(sf::Packet& packet) {
 		return socket.receive(packet) == sf::Socket::Done;
 	}
+	void processServerResponse(sf::Packet& packet) {
+		std::string responseMessage;
+		packet >> responseMessage;
+		json response;
+		try {
+			response = json::parse(responseMessage);
+			spdlog::info("json dump: \n{}", response.dump());
+		}
+		catch (const std::exception& ex) {
+			spdlog::error("cannot parse json packet: \n{}", ex.what());
+			return;
+		}
+	}
 	void start() {
-		receiveThread = std::thread([this]() {
+		requestThread = std::thread([this]() {
 			isStarted.store(true);
 			while (isStarted.load()) {
 				if (connectionStatus != ConnectionStatus::Connected && isStarted.load()) {
@@ -77,6 +90,15 @@ public:
 				}
 			}
 		});
+		receiveThread = std::thread([this]() {
+			while (!isStarted.load()) std::this_thread::sleep_for(std::chrono::milliseconds(10));
+			while (isStarted.load()) {
+				sf::Packet packet;
+				if (receiveResponse(packet)) {
+
+				}
+			}
+			});
 	}
 };
 

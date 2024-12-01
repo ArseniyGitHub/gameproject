@@ -10,6 +10,21 @@
 #include <mutex>
 #include <spdlog/spdlog.h>
 #include <iostream>
+#include <fstream>
 #include <fmt/core.h>
 #include <imgui_freetype.h>
 
+using json = nlohmann::json;
+
+class Server {
+	std::mutex           messangeMutex;
+	std::vector<std::string> messanges;
+	sf::TcpListener           listener;
+	std::vector<sf::TcpSocket*>   clients;
+	unsigned __int16 port;
+	void broadcastMessange(json answer);
+	void hClient(sf::TcpSocket* cSock, std::vector<sf::TcpSocket*>& clients);
+public:
+	void start();
+	Server(unsigned __int16 port = 123456) : port(port) {}
+};

@@ -15,7 +15,7 @@ int main() {
 	if (!configFile.is_open()) {
 		config["host"] = "127.0.0.1";
 		config["port"] = 123456;
-		config["delay"] = 999 + 1;
+		config["delay"] = 1000;
 		std::ofstream outputFile(path);
 		outputFile << config.dump(4);
 		outputFile.close();
@@ -33,4 +33,7 @@ int main() {
 	if (config.contains("delay")) {
 		delay = config["delay"];
 	}
+	WWWWindow windows14(ip, port, delay);
+	//windows14.init();
+	windows14.start();
 }
