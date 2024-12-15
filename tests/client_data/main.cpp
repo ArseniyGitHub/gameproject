@@ -9,12 +9,12 @@ int main() {
 	std::string path = "cConfing.json";
 	json       config;
 	sf::IpAddress  ip = "127.0.0.1";
-	sf::Int16    port = 123456;
+	sf::Uint16    port = 12345;
 	size_t      delay = 999 + 1;
 	std::ifstream configFile(path);
 	if (!configFile.is_open()) {
 		config["host"] = "127.0.0.1";
-		config["port"] = 123456;
+		config["port"] = 12345;
 		config["delay"] = 1000;
 		std::ofstream outputFile(path);
 		outputFile << config.dump(4);

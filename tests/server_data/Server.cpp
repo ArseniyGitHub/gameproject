@@ -1,50 +1,84 @@
 #include "server.h"
 
 void Server::start() {
-	listener.listen(Server::port);
+
 	while (true) {
-		sf::TcpSocket* neClientSocket = new sf::TcpSocket;
-		if (listener.accept(*neClientSocket) == sf::Socket::Done) {
-			clients.push_back(neClientSocket);
-			std::thread([&, this]() {this->hClient(neClientSocket, std::ref(clients)); }).detach();
-			spdlog::info("I have no clients:( Help me and connect!");
+		listener.listen(Server::port);
+		sf::TcpSocket* clientSocket = new sf::TcpSocket;
+		if (listener.accept(*clientSocket) == sf::Socket::Done) {
+			spdlog::error("new client = {}:{}", clientSocket->getRemoteAddress().toString(), Server::port);
+			clients.push_back(clientSocket);
+			clientSocket->setBlocking(true);
+			std::thread([&, this]() {this->hClient(clientSocket, std::ref(clients)); }).detach();
 		}
 	}
 }
 
 void Server::hClient(sf::TcpSocket* cSock, std::vector<sf::TcpSocket*>& clients) {
+
+	/*
+	sf::Packet     paket;
+	std::string requestStr;
+	json answer;
+	while (cSock->receive(paket) != sf::Socket::Done) {}
+	paket >> requestStr;
+
+	try {
+		json req = json::parse(requestStr);
+		std::string action = req["action"];
+		answer["action"] = req["action"];
+
+		if (action == "send_messange") {
+			answer["status"] = "success";
+			json messange;
+			messange["action"] = "new_messange";
+			messange["messange"] = req["messange"];
+			broadcastMessange(messange);
+		}
+	}
+	catch (const json::parse_error& ex) {
+		answer["action"] = "exception";
+		answer["status"] = "error";
+		answer["messange"] = "invalid json format";
+	}
+	paket << answer.dump();
+	cSock->send(paket);
+	*/
+	
 	while (true) {
 		sf::Packet     paket;
 		std::string requestStr;
 		json answer;
-		if (cSock->receive(paket) != sf::Socket::Done) {
-			break;
-		}
+		//spdlog::info("iter!");
+		if (cSock->receive(paket) != sf::Socket::Done) break;
 		paket >> requestStr;
-		spdlog::info("a {}", requestStr);
+		if (requestStr.empty()) continue;
+		
 		try {
 			json req = json::parse(requestStr);
 			std::string action = req["action"];
 			answer["action"] = req["action"];
-
 			if (action == "send_messange") {
 				answer["status"] = "success";
 				json messange;
 				messange["action"] = "new_messange";
 				messange["messange"] = req["messange"];
 				broadcastMessange(messange);
+				spdlog::info("input messange: {}", (std::string)req["messange"]);
 			}
 		}
 		catch (const json::parse_error& ex) {
 			answer["action"] = "exception";
 			answer["status"] = "error";
-			answer["messange"] = "invalid_json_format";
+			answer["messange"] = "invalid json format";
 		}
 		paket << answer.dump();
 		cSock->send(paket);
+		//spdlog::info("my clients: {}", Server::clients.size());
 
 	}
 	delete cSock;
+	
 }
 
 void Server::broadcastMessange(json answer) {

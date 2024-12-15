@@ -11,7 +11,7 @@ private:
 	std::shared_ptr<sf::RenderWindow> windows11;
 	Client client;
 public:
-	WWWWindow(const sf::IpAddress& ip = sf::IpAddress("127.0.0.1"), sf::Int16 port = 123456, size_t delay = 10000) : client(ip, port, delay) {
+	WWWWindow(const sf::IpAddress& ip = sf::IpAddress("127.0.0.1"), sf::Uint16 port = 12345, size_t delay = 10000) : client(ip, port, delay) {
 		windows11 = std::make_shared<sf::RenderWindow>(sf::VideoMode(800, 800), L"WINDOWS12");
 		init();
 	}
@@ -31,6 +31,8 @@ public:
 		return true;
 	}
 	bool init() {
+		windows11->setFramerateLimit(61);
+		client.start();
 		return initImGui();
 	}
 	
@@ -73,10 +75,11 @@ public:
 				case sf::Event::Closed:
 					//std::cout << "hehe" << std::endl;
 					windows11->close();
-					break;
+					return;
 				case sf::Event::KeyPressed:
 					switch (e.key.code) {
 					case sf::Keyboard::Escape:
+						client.stop();
 						windows11->close();
 						break;
 					}

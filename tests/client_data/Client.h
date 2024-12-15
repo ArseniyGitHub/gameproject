@@ -13,13 +13,15 @@
 #include <imgui_freetype.h>
 #include <string>
 #include <atomic>
+#include <queue>
 
 
 
 using json = nlohmann::json;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 class Client {
 public:
 	enum ConnectionStatus {
@@ -29,18 +31,21 @@ public:
 	};
 private:
 	sf::IpAddress ip;
-	sf::Int16   port;
+	sf::Uint16   port;
     size_t     delay;
 	sf::TcpSocket socket;
+	std::condition_variable cv_ABOBUS;
+	std::mutex abobusMutex;
 	std::atomic<bool> isStarted = false;
 	std::atomic<ConnectionStatus> connectionStatus = ConnectionStatus::Disconnected;
 	std::thread receiveThread;
 	std::thread requestThread;
+	std::queue<sf::Packet> abobus;
 
 public:
 	
-	Client(const sf::IpAddress& ip = sf::IpAddress("127.0.0.1"), sf::Int16 port = 123456, size_t delay = 1000) : ip(ip), port(port), delay(delay) {
-		//isStarted = true;
+	Client(const sf::IpAddress& ip = sf::IpAddress("127.0.0.1"), sf::Uint16 port = 12345, size_t delay = 1000) : ip(ip), port(port), delay(delay) {
+		spdlog::error("port: {}", this->port);
 	}
 	bool connect() {
 	    return socket.connect(ip, port) == sf::Socket::Done;
@@ -51,7 +56,12 @@ public:
 		request["messange"] = messange;
 		sf::Packet p;
 		p << request.dump();
-		socket.send(p);
+		{
+			std::lock_guard<std::mutex> lock(abobusMutex);
+			abobus.push(p);
+			
+		}
+		cv_ABOBUS.notify_one();
 	}
 	bool sendRequest(const json& msg) {
 		sf::Packet packet;
@@ -74,6 +84,11 @@ public:
 			return;
 		}
 	}
+	void stop() {
+		isStarted.store(false);
+		requestThread.detach();
+		receiveThread.detach();
+	}
 	void start() {
 		requestThread = std::thread([this]() {
 			isStarted.store(true);
@@ -84,9 +99,19 @@ public:
 						spdlog::info("try connection to server...");
 						if (connect()) {
 							connectionStatus = ConnectionStatus::Connected;
-							spdlog::info("connected to the server {}:{}", ip.toString(), port);
+							spdlog::info("connected to the server {}: {}", ip.toString(), port); 
 						}
 					}
+				}
+				{
+					std::unique_lock<std::mutex> lock(abobusMutex);
+					cv_ABOBUS.wait(lock, [this]() {
+						return !abobus.empty() || !isStarted.load();
+					});
+					if (!isStarted) break;
+					if (socket.send(abobus.front()) == sf::Socket::Done) spdlog::warn("packet sent!");
+					else spdlog::info("packet hasnt send!");
+					abobus.pop();
 				}
 			}
 		});
@@ -94,11 +119,21 @@ public:
 			while (!isStarted.load()) std::this_thread::sleep_for(std::chrono::milliseconds(10));
 			while (isStarted.load()) {
 				sf::Packet packet;
-				if (receiveResponse(packet)) {
-
+				if (receiveResponse(packet) == sf::TcpSocket::Done) {
+					std::string msg;
+					packet >> msg;
+					if (msg.empty()) continue;
+					try {
+						json messange = json::parse(msg);
+						spdlog::info("messange from server: {}", (std::string)messange["messange"]);
+					}
+					catch (const json::parse_error& ex) {
+						spdlog::error("server sent invalid json format!");
+						continue;
+					}
 				}
 			}
-			});
+		});
 	}
 };
 

@@ -26,5 +26,5 @@ class Server {
 	void hClient(sf::TcpSocket* cSock, std::vector<sf::TcpSocket*>& clients);
 public:
 	void start();
-	Server(unsigned __int16 port = 123456) : port(port) {}
+	Server(unsigned __int16 port = 12345) : port(port) {}
 };
