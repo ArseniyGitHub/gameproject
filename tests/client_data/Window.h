@@ -52,7 +52,12 @@ public:
 			ImGui::SameLine();
 			if (ImGui::Button("BUTTON! DONT FORGET MY NAME!!!", ImVec2(40, 40))) {
 				if (!t.empty()) {
-					client.sendMessangeRequest(t);
+					if (t[0] == '/') {
+						client.sendCommand(t.substr(1, t.size() - 1));
+					}
+					else {
+						client.sendMessageRequest(t);
+					}
 					t.clear();
 				}
 			}

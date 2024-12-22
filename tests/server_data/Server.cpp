@@ -29,19 +29,28 @@ void Server::hClient(sf::TcpSocket* cSock, std::vector<sf::TcpSocket*>& clients)
 			json req = json::parse(requestStr);
 			std::string action = req["action"];
 			answer["action"] = req["action"];
-			if (action == "send_messange") {
+			if (action == "send_message") {
 				answer["status"] = "success";
-				json messange;
-				messange["action"] = "new_messange";
-				messange["messange"] = req["messange"];
-				broadcastMessange(messange);
-				spdlog::info("input messange: {}", (std::string)req["messange"]);
+			    json message;
+				message["action"] = "new_message";
+				message["message"] = req["message"];
+				broadcastMessage(message);
+				spdlog::info("input message: {}", (std::string)req["message"]);
+				continue;
 			}
+			else if (action == "command") {
+				json message;
+				message["action"] = "command";
+				message["message"] = req["message"];
+				broadcastMessage(message, cSock);
+				continue;
+			}
+
 		}
 		catch (const json::parse_error& ex) {
 			answer["action"] = "exception";
 			answer["status"] = "error";
-			answer["messange"] = "invalid json format";
+			answer["message"] = "invalid json format";
 		}
 		paket << answer.dump();
 		cSock->send(paket);
@@ -49,11 +58,20 @@ void Server::hClient(sf::TcpSocket* cSock, std::vector<sf::TcpSocket*>& clients)
 	delete cSock;
 }
 
-void Server::broadcastMessange(json answer) {
+void Server::broadcastMessage(json answer) {
+	sf::Packet p;
+	p << answer.dump();
 	for (auto& client : clients) {
-		sf::Packet p;
-		p << answer.dump();
 		client->send(p);
 	}
 	//spam(answer);
+}
+
+void Server::broadcastMessage(json answer, sf::TcpSocket* ignore) {
+	sf::Packet p;
+	p << answer.dump();
+	for (auto& client : clients) {
+		if (client == ignore) continue;
+		client->send(p);
+	}
 }

@@ -17,12 +17,13 @@
 using json = nlohmann::json;
 
 class Server {
-	std::mutex           messangeMutex;
-	std::vector<std::string> messanges;
+	std::mutex           messageMutex;
+	std::vector<std::string> messages;
 	sf::TcpListener           listener;
 	std::vector<sf::TcpSocket*>   clients;
 	unsigned __int16 port;
-	void broadcastMessange(json answer);
+	void broadcastMessage(json);
+	void broadcastMessage(json, sf::TcpSocket*);
 	void hClient(sf::TcpSocket* cSock, std::vector<sf::TcpSocket*>& clients);
 public:
 	void start();
