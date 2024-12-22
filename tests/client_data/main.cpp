@@ -28,7 +28,7 @@ int main() {
 		port = config["port"];
 	}
 	if (config.contains("host")) {
-		ip = config["host"].get<std::string>();;;
+		ip = config["host"].get<std::string>();
 	}
 	if (config.contains("delay")) {
 		delay = config["delay"];
