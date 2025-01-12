@@ -1,4 +1,4 @@
-#include "server.h"
+#include "Server.h"
 #include <iostream>
 
 void Server::start() {
@@ -24,14 +24,14 @@ void Server::hClient(sf::TcpSocket* cSock, std::vector<sf::TcpSocket*>& clients)
 		}
 		paket >> requestStr;
 		if (requestStr.empty()) continue;
-		
+
 		try {
 			json req = json::parse(requestStr);
 			std::string action = req["action"];
 			answer["action"] = req["action"];
 			if (action == "send_message") {
 				answer["status"] = "success";
-			    json message;
+				json message;
 				message["action"] = "new_message";
 				message["message"] = req["message"];
 				broadcastMessage(message);

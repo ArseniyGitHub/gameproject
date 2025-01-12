@@ -9,7 +9,7 @@
 #include <box2d/box2d.h>
 #include <thread>
 #include "UserInput.h"
-#include <Thor/Math.hpp>
+//#include <Thor/Math.hpp>
 #define cu8(str) reinterpret_cast<const char*>(u8##str)
 
 class Game {

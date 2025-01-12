@@ -38,16 +38,21 @@ find_package(implot CONFIG REQUIRED)
 
 # Добавьте источник в исполняемый файл этого проекта.
 add_executable (gameproject  "main.cpp" ${SOURCES})
-add_executable  (thor_test    "tests/ThorTest.cpp")
+#add_executable  (thor_test    "tests/ThorTest.cpp")
 add_executable (candle_test "tests/CandleTest.cpp")
 add_executable(network_test_server "tests/server_data/server.cpp" "tests/server_data/server.h" "tests/server_data/main.cpp")
 add_executable(network_test_client "tests/client_data/client.cpp" "tests/client_data/client.h" "tests/client_data/main.cpp" "tests/client_data/window.h" "tests/client_data/window.cpp")
+add_executable(test_client "tests/gameNetwork3000/CLIENT/Client.cpp" "tests/gameNetwork3000/CLIENT/Client.h" "tests/gameNetwork3000/CLIENT/Window.cpp" "tests/gameNetwork3000/CLIENT/Window.h" "tests/gameNetwork3000/CLIENT/main.cpp" "tests/gameNetwork3000/parser/parser.h" "tests/gameNetwork3000/parser/parser.cpp")
+add_executable(test_server "tests/gameNetwork3000/SERVER/Server.cpp" "tests/gameNetwork3000/SERVER/Server.h" "tests/gameNetwork3000/SERVER/main.cpp" "tests/gameNetwork3000/parser/parser.h" "tests/gameNetwork3000/parser/parser.cpp")
+
 
 target_include_directories("gameproject" PRIVATE "include")
-#########################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################################################################################################################################################################################################################################################################################
 target_link_libraries(gameproject PRIVATE spdlog::spdlog)
 target_link_libraries(network_test_server PRIVATE spdlog::spdlog sfml-system sfml-network sfml-graphics sfml-window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot ImGui-SFML::ImGui-SFML)
 target_link_libraries(network_test_client PRIVATE spdlog::spdlog sfml-system sfml-network sfml-graphics sfml-window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot ImGui-SFML::ImGui-SFML)
+target_link_libraries(test_client PRIVATE spdlog::spdlog sfml-system sfml-network sfml-graphics sfml-window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot ImGui-SFML::ImGui-SFML)
+target_link_libraries(test_server PRIVATE spdlog::spdlog sfml-system sfml-network sfml-graphics sfml-window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot ImGui-SFML::ImGui-SFML)
 target_link_libraries(gameproject PRIVATE box2d::box2d)
 target_link_libraries(gameproject PRIVATE sfml-system sfml-network sfml-graphics sfml-window)
 target_link_libraries(gameproject PRIVATE imgui::imgui)
@@ -59,36 +64,39 @@ target_link_libraries(gameproject PRIVATE implot::implot)
 
 
 
-target_link_libraries(thor_test   PRIVATE sfml-system sfml-graphics sfml-window)
+#target_link_libraries(thor_test   PRIVATE sfml-system sfml-graphics sfml-window)
 target_link_libraries(candle_test PRIVATE sfml-system sfml-graphics sfml-window Candle-s)
-##################################################################################################################################################################################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################################################################################################################################################################################################################################################################################
 
 #target_link_libraries(network_test3 PRIVATE sfml-system sfml-graphics sfml-window implot::implot ImGui-SFML::ImGui-SFML nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui sfml-network)
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_link_libraries("gameproject" PRIVATE "${VCPKG_DEBUG_LIB_DIR}/thor-d.lib")
-    target_link_libraries(thor_test PRIVATE "${VCPKG_DEBUG_LIB_DIR}/thor-d.lib")
-else()
-    target_link_libraries("gameproject" PRIVATE "${VCPKG_LIB_DIR}/thor.lib")
-    target_link_libraries(thor_test PRIVATE "${VCPKG_LIB_DIR}/thor.lib")
-endif()
-set(THOR_DLL_PATH_RELEASE "${VCPKG_BIN_DIR}/thor.dll")
-set(THOR_DLL_PATH_DEBUG "${VCPKG_DEBUG_BIN_DIR}/thor-d.dll")
+#if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+#    target_link_libraries("gameproject" PRIVATE "${VCPKG_DEBUG_LIB_DIR}/thor-d.lib")
+#    target_link_libraries(thor_test PRIVATE "${VCPKG_DEBUG_LIB_DIR}/thor-d.lib")
+#else()
+#    target_link_libraries("gameproject" PRIVATE "${VCPKG_LIB_DIR}/thor.lib")
+#    target_link_libraries(thor_test PRIVATE "${VCPKG_LIB_DIR}/thor.lib")
+#endif()
+#set(THOR_DLL_PATH_RELEASE "${VCPKG_BIN_DIR}/thor.dll")
+#set(THOR_DLL_PATH_DEBUG "${VCPKG_DEBUG_BIN_DIR}/thor-d.dll")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET gameproject PROPERTY CXX_STANDARD 23)
-  set_property(TARGET thor_test PROPERTY CXX_STANDARD 23)
+  #set_property(TARGET thor_test PROPERTY CXX_STANDARD 23)
   set_property(TARGET candle_test PROPERTY CXX_STANDARD 23)
   set_property(TARGET network_test_server PROPERTY CXX_STANDARD 23)
   set_property(TARGET network_test_client PROPERTY CXX_STANDARD 23)
+  set_property(TARGET test_client PROPERTY CXX_STANDARD 23)
+  set_property(TARGET test_server PROPERTY CXX_STANDARD 23)
 endif()
 
-add_custom_command(TARGET gameproject POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<$<CONFIG:Debug>:${THOR_DLL_PATH_DEBUG}>
-    $<$<CONFIG:Release>:${THOR_DLL_PATH_RELEASE}>
-    $<TARGET_FILE_DIR:gameproject>
-)
+
+#add_custom_command(TARGET gameproject POST_BUILD
+#  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#    $<$<CONFIG:Debug>:${THOR_DLL_PATH_DEBUG}>
+#    $<$<CONFIG:Release>:${THOR_DLL_PATH_RELEASE}>
+#    $<TARGET_FILE_DIR:gameproject>
+#)
 
 set(SOURSE_DIR "${CMAKE_SOURCE_DIR}/assets")
 set(DESTINATION_DIR "${CMAKE_BINARY_DIR}")

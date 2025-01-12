@@ -31,7 +31,7 @@ public:
 		return true;
 	}
 	bool init() {
-		windows11->setFramerateLimit(61);
+		windows11->setFramerateLimit(60);
 		client.start();
 		return initImGui();
 	}
@@ -53,7 +53,12 @@ public:
 			if (ImGui::Button("BUTTON! DONT FORGET MY NAME!!!", ImVec2(40, 40))) {
 				if (!t.empty()) {
 					if (t[0] == '/') {
-						client.sendCommand(t.substr(1, t.size() - 1));
+						if (t[1] == '/') {
+							client.sendCommandSpam(t.substr(2, t.size() - 2));
+						}
+						else {
+							client.sendCommand(t.substr(1, t.size() - 1));
+						}
 					}
 					else {
 						client.sendMessageRequest(t);
@@ -79,6 +84,7 @@ public:
 
 				case sf::Event::Closed:
 					//std::cout << "hehe" << std::endl;
+					client.stop();
 					windows11->close();
 					return;
 				case sf::Event::KeyPressed:
@@ -103,4 +109,5 @@ public:
 	void start() {
 		render();
 	}
+	
 };
