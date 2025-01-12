@@ -1,6 +1,7 @@
 #pragma once
 #include  <vector>
 #include  <string>
+#include <iostream>
 #include "types.h"
 #include   <SFML/Graphics.hpp>
 
@@ -37,8 +38,8 @@ public:
 		ui64 counter = 0;
 		ui64 _sz = 0;
 		ParserElem::Types T = ParserElem::Types::end;
-		for (ui64 i = 0; i < size; i++) {
-			counter = 0;
+		for (ui64 i = 0; i < size;) {
+
 
 			T = *(ParserElem::Types*)(data + i);  i += sizeof(ParserElem::Types);
 			if (T >= ParserElem::Types::end) throw ErrorType();
@@ -66,20 +67,22 @@ public:
 				_sz = 4;
 				break;
 			}
-
 			ParserElem obj;
 			obj.data = new ui8[_sz];
+			ui8* ptr = (ui8*)(obj.data);
+			counter =  0;
 			obj.type = T;
 			while (counter < _sz) {
-				((ui8*)(obj.data))[i] = data[i];
-				i++;  counter++;
+				std::cout << (int)data[i] << std::endl;
+				ptr[counter++] = data[i++];
 			}
 			ret.push_back(obj);
 		}
+		return ret;
 	}
 
-	static std::vector<ui8> pack(ParserElem frst) { 
-		ui64 sz = 0;   ui8* writeData = (ui8*)frst.data;  std::vector<float> boofer(4);
+	static std::vector<ui8> pack(ParserElem& frst) { 
+		ui64 sz = 0;   ui8* writeData = (ui8*)frst.data;
 		switch (frst.type) {
 		case ParserElem::Types::coords:
 			sz = 2 * 4;
@@ -103,22 +106,29 @@ public:
 			sz = 4;
 			break;
 		}
-		std::vector<ui8> ret(1 + sz);
-		ret[0] = frst.type;
+		std::vector<ui8> ret(sizeof(ParserElem::Types) + sz);
+		for (ui64 i = 0; i < sizeof(ParserElem::Types); i++) {
+			ret[i] = ((ui8*)(&frst.type))[i];
+		}
 		for (ui64 i = 0; i < sz; i++) {
-			ret[i + 1] = writeData[i];
+			ret[i + sizeof(ParserElem::Types)] = writeData[i];
 		}
 		return ret;
 	}
-    static std::vector<ui8> pack(ParserElem frst, ParserElem... any) {
+	/*
+    static std::vector<ui8> pack(ParserElem frst, ParserElem... args) {
 		std::vector<ui8> ret = pack(frst);
-		ret += pack(any...);
+		std::vector<ui8>& inc = pack(args...);
+		ret.insert(ret.end(), inc.begin(), inc.end());
+		//ret.emplace_back(pack(any...));
 		return ret;
 	}
+	*/
 	static std::vector<ui8> pack(std::vector<ParserElem>& data) {
 		std::vector<ui8> ret;
 		for (auto& el : data) {
-			ret += pack(el);
+			std::vector<ui8>& inc = pack(el);
+			ret.insert(ret.end(), inc.begin(), inc.end());
 		}
 		return ret;
 	}
