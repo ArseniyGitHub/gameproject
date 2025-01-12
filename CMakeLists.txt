@@ -44,6 +44,7 @@ add_executable(network_test_server "tests/server_data/server.cpp" "tests/server_
 add_executable(network_test_client "tests/client_data/client.cpp" "tests/client_data/client.h" "tests/client_data/main.cpp" "tests/client_data/window.h" "tests/client_data/window.cpp")
 add_executable(test_client "tests/gameNetwork3000/CLIENT/Client.cpp" "tests/gameNetwork3000/CLIENT/Client.h" "tests/gameNetwork3000/CLIENT/Window.cpp" "tests/gameNetwork3000/CLIENT/Window.h" "tests/gameNetwork3000/CLIENT/main.cpp" "tests/gameNetwork3000/parser/parser.h" "tests/gameNetwork3000/parser/parser.cpp")
 add_executable(test_server "tests/gameNetwork3000/SERVER/Server.cpp" "tests/gameNetwork3000/SERVER/Server.h" "tests/gameNetwork3000/SERVER/main.cpp" "tests/gameNetwork3000/parser/parser.h" "tests/gameNetwork3000/parser/parser.cpp")
+add_executable(test_parser "tests/gameNetwork3000/parser/parser.cpp" "tests/gameNetwork3000/parser/parser.h" "tests/gameNetwork3000/parser/test.cpp")
 
 
 target_include_directories("gameproject" PRIVATE "include")
@@ -53,6 +54,7 @@ target_link_libraries(network_test_server PRIVATE spdlog::spdlog sfml-system sfm
 target_link_libraries(network_test_client PRIVATE spdlog::spdlog sfml-system sfml-network sfml-graphics sfml-window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot ImGui-SFML::ImGui-SFML)
 target_link_libraries(test_client PRIVATE spdlog::spdlog sfml-system sfml-network sfml-graphics sfml-window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot ImGui-SFML::ImGui-SFML)
 target_link_libraries(test_server PRIVATE spdlog::spdlog sfml-system sfml-network sfml-graphics sfml-window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot ImGui-SFML::ImGui-SFML)
+target_link_libraries(test_parser PRIVATE spdlog::spdlog sfml-system sfml-network sfml-graphics sfml-window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot ImGui-SFML::ImGui-SFML)
 target_link_libraries(gameproject PRIVATE box2d::box2d)
 target_link_libraries(gameproject PRIVATE sfml-system sfml-network sfml-graphics sfml-window)
 target_link_libraries(gameproject PRIVATE imgui::imgui)

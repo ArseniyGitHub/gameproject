@@ -2,7 +2,7 @@
 #include  <vector>
 #include  <string>
 #include "types.h"
-//#include   <SFML/Graphics.hpp>
+#include   <SFML/Graphics.hpp>
 
 struct ParserElem {
 	enum Types {
@@ -32,7 +32,7 @@ struct ParserElem {
 class Parser {
 public:
 	struct ErrorType {};
-	std::vector<ParserElem> unPack(const ui8* data, const ui64 size) {
+	static std::vector<ParserElem> unPack(const ui8* data, const ui64 size) {
 		std::vector<ParserElem> ret;
 		ui64 counter = 0;
 		ui64 _sz = 0;
@@ -78,7 +78,7 @@ public:
 		}
 	}
 
-	std::vector<ui8> pack(ParserElem frst) { 
+	static std::vector<ui8> pack(ParserElem frst) { 
 		ui64 sz = 0;   ui8* writeData = (ui8*)frst.data;  std::vector<float> boofer(4);
 		switch (frst.type) {
 		case ParserElem::Types::coords:
@@ -98,7 +98,6 @@ public:
 			break;
 		case ParserElem::Types::color:
 			sz = 4;
-			
 			break;
 		case ParserElem::Types::id:
 			sz = 4;
@@ -111,10 +110,16 @@ public:
 		}
 		return ret;
 	}
-	std::vector<ui8> pack(ParserElem frst, ParserElem... any) {
+    static std::vector<ui8> pack(ParserElem frst, ParserElem... any) {
 		std::vector<ui8> ret = pack(frst);
-		ret += pack(any..);
+		ret += pack(any...);
 		return ret;
 	}
-	
+	static std::vector<ui8> pack(std::vector<ParserElem>& data) {
+		std::vector<ui8> ret;
+		for (auto& el : data) {
+			ret += pack(el);
+		}
+		return ret;
+	}
 };
