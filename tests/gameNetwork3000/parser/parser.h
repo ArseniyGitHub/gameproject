@@ -138,7 +138,7 @@ public:
 
 using __bytes = std::vector<ui8>;
 
-template <typename nameType, typename typeType, typename blockType, typename sizeType>
+template <typename nameType, typename typeType, typename blockType, typename sizeType, fn<ui64, typeType&> _Unparse_Process = nullptr>
 struct __defParserVer;
 
 struct __NullParserType {
@@ -171,6 +171,20 @@ struct __ParserByteCopy {
 			(*ret)[i] = ((ui8*)(&el))[i];
 		}
 		return ret;
+	}
+};
+
+template <typename _Type>
+struct __NullParserSize {
+	_Type el;
+	__NullParserSize(__NullParserSize& from) : el(from.el) {}
+	__NullParserSize(_Type from) : el(from) {}
+	__NullParserSize() {}
+	void unParse(__bytes* _from) {
+		return;
+	}
+	__bytes* parse() {
+		return new __bytes;
 	}
 };
 
@@ -209,9 +223,11 @@ struct __ParserText {
 	}
 };
 
+struct __NotFullPacket {};
 struct __ParserBlock {
 	__bytes data;
-	__bytes* parse() {
+	__bytes* parse(ui64 sz) {
+		if (sz != data.size()) throw __NotFullPacket();
 		__bytes* ret = new __bytes;
 		ret->insert(ret->begin(), data.begin(), data.end());
 		return ret;
@@ -224,42 +240,40 @@ struct __ParserBlock {
 	}
 };
 
-template <typename nameType, typename typeType, typename blockType, typename sizeType>
+template <typename nameType, typename typeType, typename blockType, typename sizeType, fn<ui64, typeType&> _Unparse_Process = nullptr>
 struct __defParserVer {
 	nameType name;   sizeType size;  typeType type;  blockType data;
-	fn<ui64, sizeType&, typeType&> _Unparse_Process = nullptr;
 	__defParserVer(sizeType _size, nameType _name, typeType _type, blockType _data) : size(_size), name(_name), type(_type), data(_data) {}
 	__defParserVer() {}
 	__bytes* parse() {
-		__bytes& ret = *(new __bytes);
+		__bytes* ret = (new __bytes);
 		__bytes* boofer;
 		boofer = (name.parse());
-		if (boofer != nullptr && !boofer->empty()) ret.insert(ret.end(), boofer->begin(), boofer->end());
+		if (boofer != nullptr && !boofer->empty()) ret->insert(ret->end(), boofer->begin(), boofer->end());
 		delete boofer;
 
 		boofer = (type.parse());
-		if (boofer != nullptr && !boofer->empty()) ret.insert(ret.end(), boofer->begin(), boofer->end());
+		if (boofer != nullptr && !boofer->empty()) ret->insert(ret->end(), boofer->begin(), boofer->end());
 		delete boofer;
 
 		boofer = (size.parse());
-		if (boofer != nullptr && !boofer->empty()) ret.insert(ret.end(), boofer->begin(), boofer->end());
+		if (boofer != nullptr && !boofer->empty()) ret->insert(ret->end(), boofer->begin(), boofer->end());
 		delete boofer;
 
-		boofer = (data.parse());
-		if (boofer != nullptr && !boofer->empty()) ret.insert(ret.end(), boofer->begin(), boofer->end());
+		if (_Unparse_Process != nullptr) size.el = _Unparse_Process(type);
+		boofer = data.parse(size.el);
+		if (boofer != nullptr && !boofer->empty()) ret->insert(ret->end(), boofer->begin(), boofer->end());
 		delete boofer;
 
-		return &ret;
+		return ret;
 	}
 	void unParse(__bytes* _from) {
 		__bytes& from = *_from;
 		name.unParse(_from);
 		type.unParse(_from);
-		size.unParse(_from);
-		ui64 sz = 0;
-		if (_Unparse_Process != nullptr) sz = _Unparse_Process(size, type);
-		else sz = size.el;
-		data.unParse(_from, sz);
+		if (_Unparse_Process != nullptr) size.el = _Unparse_Process(type);
+		else size.unParse(_from);;
+		data.unParse(_from, size.el);
 	}
 };
 

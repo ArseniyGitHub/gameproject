@@ -2,6 +2,16 @@
 #include <iostream>
 #include <map>
 
+ui64 autoSize(__ParserByteCopy<ui64>& type) {
+	switch (type.el) {
+	case 3:
+		return 4;
+	case 6:
+		return 8;
+	}
+	return 0;
+}
+
 int main() {
 	/*
 	std::vector<ParserElem> test = { ParserElem(ParserElem::coords, &sf::Vector2f(9, 11)), ParserElem(ParserElem::speed, &num<float>(4))};
@@ -12,12 +22,11 @@ int main() {
 	*/
 	
 
-	__defParserVer<__ParserText<ui64>, __ParserByteCopy<ui64>, __ParserBlock, __ParserByteCopy<ui64>> a;
+	__defParserVer<__ParserText<ui64>, __ParserByteCopy<ui64>, __ParserBlock, __NullParserSize<ui64>, autoSize> a;
 	a.name.text = "myVariable";
 	a.type.el = 3;
-	a.size = 4;
-	a.data.data = *__ParserByteCopy<ui32>(98).parse();
-	__defParserVer<__ParserText<ui64>, __ParserByteCopy<ui64>, __ParserBlock, __ParserByteCopy<ui64>> b;
+	a.data.data = *(__ParserByteCopy<ui32>(98).parse());
+	__defParserVer<__ParserText<ui64>, __ParserByteCopy<ui64>, __ParserBlock, __NullParserSize<ui64>, autoSize> b;
 	b.unParse(a.parse());
-	std::cout << "name: " << b.name.text << ", type: " << a.type.el << ", size: " << a.size.el << std::endl;
+	std::cout << "name: " << b.name.text << ", type: " << b.type.el << ", size: " << b.size.el << std::endl;
 }
