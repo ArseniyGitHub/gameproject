@@ -3,7 +3,7 @@
 #include  <string>
 #include <iostream>
 #include "types.h"
-#include   <SFML/Graphics.hpp>
+#include <SFML/Graphics.hpp>
 
 struct ParserElem {
 	enum Types {
@@ -133,3 +133,153 @@ public:
 		return ret;
 	}
 };
+
+
+
+using __bytes = std::vector<ui8>;
+
+template <typename nameType, typename typeType, typename blockType, typename sizeType>
+struct __defParserVer;
+
+struct __NullParserType {
+	__NullParserType(){}
+	template <typename type> __NullParserType(type& from){}
+	__bytes* parse() {
+		return nullptr;
+	}
+	void unParse(__bytes* pack) {
+		return;
+	}
+};
+
+template <typename _Type>
+struct __ParserByteCopy {
+	_Type el;
+	__ParserByteCopy(__ParserByteCopy& from) : el(from.el) {}
+	__ParserByteCopy(_Type from) : el(from) {}
+	__ParserByteCopy() {}
+	void unParse(__bytes* _from) {
+		__bytes& from = *_from;
+		for (ui64 i = 0; i < sizeof(_Type) && i < from.size(); i++) {
+			((ui8*)(&el))[i] = from[i];
+		}
+		from.erase(from.begin(), from.begin() + sizeof(_Type));
+	}
+	__bytes* parse() {
+		__bytes* ret = new __bytes(sizeof(_Type));
+		for (ui64 i = 0; i < sizeof(_Type); i++) {
+			(*ret)[i] = ((ui8*)(&el))[i];
+		}
+		return ret;
+	}
+};
+
+template <typename _sizeType>
+struct __ParserText {
+	using sizeType = __ParserByteCopy<_sizeType>;
+	std::string text;
+	__ParserText(__ParserText& from) : text(from.text) {}
+	__ParserText() {}
+	__bytes* parse() {
+		__bytes* boofer;  __bytes bf2(text.size());
+		sizeType sz = text.size();
+
+		boofer = sz.parse();
+		//if (boofer != nullptr && !boofer->empty()) ret.insert(ret.end(), boofer->begin(), boofer->end());
+		//delete boofer;
+		if (boofer == nullptr) boofer = new __bytes;
+
+		for (ui64 i = 0; i < text.size(); i++) {
+			bf2[i] = text[i];
+		}
+		boofer->insert(boofer->end(), bf2.begin(), bf2.end());
+		return boofer;
+	}
+
+	void unParse(__bytes* _from) {
+		text.clear();
+		__bytes& from = *_from;
+		sizeType sz;
+		sz.unParse(_from);
+		text.resize(sz.el);
+		for (ui64 i = 0; i < sz.el && i < from.size(); i++) {
+			this->text[i] = from[i];
+		}
+		from.erase(from.begin(), from.begin() + sz.el);
+	}
+};
+
+struct __ParserBlock {
+	__bytes data;
+	__bytes* parse() {
+		__bytes* ret = new __bytes;
+		ret->insert(ret->begin(), data.begin(), data.end());
+		return ret;
+	}
+	void unParse(__bytes* _from, ui64 sz) {
+		__bytes& from = *_from;
+		data.clear();
+		data.insert(data.begin(), from.begin(), from.begin() + sz);
+		from.erase(from.begin(), from.begin() + sz);
+	}
+};
+
+template <typename nameType, typename typeType, typename blockType, typename sizeType>
+struct __defParserVer {
+	nameType name;   sizeType size;  typeType type;  blockType data;
+	fn<ui64, sizeType&, typeType&> _Unparse_Process = nullptr;
+	__defParserVer(sizeType _size, nameType _name, typeType _type, blockType _data) : size(_size), name(_name), type(_type), data(_data) {}
+	__defParserVer() {}
+	__bytes* parse() {
+		__bytes& ret = *(new __bytes);
+		__bytes* boofer;
+		boofer = (name.parse());
+		if (boofer != nullptr && !boofer->empty()) ret.insert(ret.end(), boofer->begin(), boofer->end());
+		delete boofer;
+
+		boofer = (type.parse());
+		if (boofer != nullptr && !boofer->empty()) ret.insert(ret.end(), boofer->begin(), boofer->end());
+		delete boofer;
+
+		boofer = (size.parse());
+		if (boofer != nullptr && !boofer->empty()) ret.insert(ret.end(), boofer->begin(), boofer->end());
+		delete boofer;
+
+		boofer = (data.parse());
+		if (boofer != nullptr && !boofer->empty()) ret.insert(ret.end(), boofer->begin(), boofer->end());
+		delete boofer;
+
+		return &ret;
+	}
+	void unParse(__bytes* _from) {
+		__bytes& from = *_from;
+		name.unParse(_from);
+		type.unParse(_from);
+		size.unParse(_from);
+		ui64 sz = 0;
+		if (_Unparse_Process != nullptr) sz = _Unparse_Process(size, type);
+		else sz = size.el;
+		data.unParse(_from, sz);
+	}
+};
+
+/*
+template <typename variableT>
+class _ParserV2 {
+	static __bytes parse(std::vector<variableT> input) {
+		__bytes ret;   __bytes boofer;
+		for (variableT& el : input) {
+			boofer = el.parse();
+			ret.insert(ret.end(), boofer.begin(), boofer.end());
+		}
+		return ret;
+	}
+	static std::vector<variableT> unParse(__bytes input) {
+		std::vector<variableT> ret;
+		while (!ret.empty()) {
+			ret.push_back(variableT::unParse(input));
+		}
+		return ret;
+	}
+};
+*/
