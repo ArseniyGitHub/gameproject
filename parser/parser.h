@@ -3,7 +3,7 @@
 #include  <string>
 #include <iostream>
 #include "types.h"
-#include <SFML/Graphics.hpp>
+//#include <SFML/Graphics.hpp>
 
 /*
 struct ParserElem {
@@ -288,18 +288,18 @@ struct __defParserVer {
 		elemBoofer = new type;
 		return *this;
 	}
-	template <typename type> type& get() {
+	template <typename type> type& getBoofer() {
 		return *(type*)elemBoofer;
 	}
-	template <typename type> type& getAs() {
-		return *(type*)(data.elemForParsing);
+	template <typename type> __defParserVer& parseBoofer() {
+		data.data = ((type*)elemBoofer)->parse();
+		return *this;
 	}
-	template <typename type> type getAsUP() {
-		type ret;
-		ret.unParse(data.data);
-		return ret;
+	template <typename type> __defParserVer& unParseBoofer() {
+		elemBoofer = new type;
+		((type*)elemBoofer)->unParse(data.data);
+		return *this;
 	}
-	template <typename type> operator type& () { return *(type*)(data.elemForParsing); }
 };
 
 using _defParserSize = __ParserByteCopy<ui64>;
@@ -352,6 +352,7 @@ template <typename szType> struct Parser2 {
 	}
 	
 };
+
 
 
 template <typename szType, fn<ui64, __ParserByteCopy<szType>&> unParseProc> struct Parser2_Eco {
