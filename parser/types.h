@@ -5,7 +5,6 @@ namespace LIB {
         operator nT& () { return elem; }
         num(nT from = 0) : elem(from){}
     };
-
     typedef unsigned __int64 ui64;
     typedef unsigned __int32 ui32;
     typedef unsigned __int16 ui16;
