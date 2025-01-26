@@ -5,6 +5,7 @@
 #include "types.h"
 #include <SFML/Graphics.hpp>
 
+/*
 struct ParserElem {
 	enum Types {
 		coords,
@@ -123,7 +124,7 @@ public:
 		//ret.emplace_back(pack(any...));
 		return ret;
 	}
-	*/
+	*//*
 	static std::vector<ui8> pack(std::vector<ParserElem>& data) {
 		std::vector<ui8> ret;
 		for (auto& el : data) {
@@ -133,7 +134,7 @@ public:
 		return ret;
 	}
 };
-
+*/
 
 
 using __bytes = std::vector<ui8>;
@@ -193,6 +194,7 @@ struct __ParserText {
 	using sizeType = __ParserByteCopy<_sizeType>;
 	std::string text;
 	__ParserText(__ParserText& from) : text(from.text) {}
+	__ParserText(const std::string& from) : text(from) {}
 	__ParserText() {}
 	__bytes* parse() {
 		__bytes* boofer;  __bytes bf2(text.size());
@@ -223,8 +225,9 @@ struct __ParserText {
 	}
 };
 
-struct __NotFullPacket {};
+
 struct __ParserBlock {
+	struct __NotFullPacket {};
 	__bytes data;
 	__bytes* parse(ui64 sz) {
 		if (sz != data.size()) throw __NotFullPacket();
@@ -240,7 +243,7 @@ struct __ParserBlock {
 	}
 };
 
-template <typename nameType, typename typeType, typename blockType, typename sizeType, fn<ui64, typeType&> _Unparse_Process = nullptr>
+template <typename nameType, typename typeType, typename blockType, typename sizeType, fn<ui64, typeType&> _Unparse_Process>
 struct __defParserVer {
 	nameType name;   sizeType size;  typeType type;  blockType data;
 	__defParserVer(sizeType _size, nameType _name, typeType _type, blockType _data) : size(_size), name(_name), type(_type), data(_data) {}
@@ -272,8 +275,83 @@ struct __defParserVer {
 		name.unParse(_from);
 		type.unParse(_from);
 		if (_Unparse_Process != nullptr) size.el = _Unparse_Process(type);
-		else size.unParse(_from);;
+		else size.unParse(_from);
 		data.unParse(_from, size.el);
+	}
+	template <typename type> type& getAs() {
+		return *(type*)(data.elemForParsing);
+	}
+	template <typename type> type getAsUP() {
+		type ret;
+		ret.unParse(data.data);
+		return ret;
+	}
+	template <typename type> operator type& () { return *(type*)(data.elemForParsing); }
+};
+
+using _defParserSize = __ParserByteCopy<ui64>;
+using _defParserText =     __ParserText<ui64>;
+template <typename szType, fn<ui64, __ParserByteCopy<szType>&> unParseS> using _EcoParserElem = __defParserVer<__NullParserType, __ParserByteCopy<szType>, __ParserBlock, __NullParserSize<ui64>, unParseS>;
+template <typename typeT> using _defParserElem                               =                                    __defParserVer<__ParserText<ui64>, typeT, __ParserBlock, __ParserByteCopy<ui64>, nullptr>;
+
+template <typename typeT> struct Parser2 {
+	std::vector<_defParserElem<typeT>> data;
+	_defParserElem<typeT>& operator [](ui64 ind) {
+		if (ind + 1 > data.size()) data.resize(ind + 1);
+		return data[ind];
+	}
+	_defParserElem<typeT>& operator [](std::string name) {
+		ui64 i = 0;
+		while (i < data.size() && data[i].name != name);
+		if (i == data.size()) data.push_back(_defParserElem<typeT>(__ParserByteCopy<ui64>(0), __ParserText<ui64>(name), typeT(), __ParserBlock()));
+		return data[i];
+	}
+	bool isHere(std::string name) {
+		ui64 i = 0;
+		while (i < data.size() && data[i].name != name);
+		if (i == data.size()) return false;
+		return true;
+	}
+	__bytes* parse() {
+		__bytes* ret = new __bytes();  __bytes* boofer = nullptr;
+		for (_defParserElem<typeT>& el : data) {
+			boofer = el.parse();
+			ret->insert(ret->end(), boofer->begin(), boofer->end());
+			delete boofer;
+		}
+		return ret;
+	}
+	void unParse(__bytes* from) {
+		data.clear();  _defParserElem<typeT>* boofer = nullptr;
+		while (from->size() != 0) {
+			boofer   =   new _defParserElem<typeT>;
+			boofer->unParse(from);
+			data.push_back(*boofer);
+			delete        boofer;
+		}
+		return;
+	}
+};
+
+template <typename szType, fn<ui64, __ParserByteCopy<szType>&> unParseProc> struct Parser2_Eco {
+	std::vector<_EcoParserElem<szType, unParseProc>> data;
+	_EcoParserElem<szType, unParseProc>& operator [](ui64 ind) {
+		if (ind + 1 > data.size()) data.resize(ind + 1);
+		return data[ind];
+	}
+	__bytes* parse() {
+		__bytes* ret = new __bytes();  __bytes* boofer = nullptr;
+		for (_EcoParserElem<szType, unParseProc>& el : data) {
+			boofer = el.parse();
+			ret->insert(ret->end(), boofer->begin(), boofer->end());
+		}
+		return ret;
+	}
+	void unParse(__bytes* from) {
+		data.clear();
+		while (from->size() != 0)
+			data.push_back(_EcoParserElem<szType, unParseProc>().unParse(from));
+		return;
 	}
 };
 
