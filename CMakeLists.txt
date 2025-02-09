@@ -35,6 +35,8 @@ find_package(ImGui-SFML CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(unofficial-sqlite3 CONFIG REQUIRED)
 find_package(implot CONFIG REQUIRED)
+find_package(OpenGL REQUIRED)
+#target_link_libraries(main PRIVATE OpenGL::GL)
 
 # Добавьте источник в исполняемый файл этого проекта.
 add_executable (gameproject  "main.cpp" ${SOURCES})
@@ -44,6 +46,7 @@ add_executable(network_test_server "tests/server_data/server.cpp" "tests/server_
 add_executable(network_test_client "tests/client_data/client.cpp" "tests/client_data/client.h" "tests/client_data/main.cpp" "tests/client_data/window.h" "tests/client_data/window.cpp")
 add_executable(test_client "tests/gameNetwork3000/CLIENT/Client.cpp" "tests/gameNetwork3000/CLIENT/Client.h" "tests/gameNetwork3000/CLIENT/Window.cpp" "tests/gameNetwork3000/CLIENT/Window.h" "tests/gameNetwork3000/CLIENT/main.cpp" "parser/parser.h")
 add_executable(test_server "tests/gameNetwork3000/SERVER/Server.cpp" "tests/gameNetwork3000/SERVER/Server.h" "tests/gameNetwork3000/SERVER/main.cpp" "parser/parser.h")
+add_executable(OpenGL_main "tests/OpenGL/OpenGL_main")
 add_library(parser STATIC "parser/parser.h" "parser/parser.cpp")
 add_executable(test_parser "parser/parser.h" "parser/test.cpp")
 
@@ -64,6 +67,7 @@ target_link_libraries(gameproject PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(gameproject PRIVATE Candle-s)
 target_link_libraries(gameproject PRIVATE unofficial::sqlite3::sqlite3)
 target_link_libraries(gameproject PRIVATE implot::implot)
+target_link_libraries(OpenGL_main PRIVATE sfml-graphics sfml-window sfml-system spdlog::spdlog ${OPENGL_LIBRARIES})
 #target_link_libraries()
 
 
@@ -94,6 +98,7 @@ if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET test_server PROPERTY CXX_STANDARD 23)
   set_property(TARGET parser PROPERTY CXX_STANDARD 23)
   set_property(TARGET test_parser PROPERTY CXX_STANDARD 23)
+  set_property(TARGET OpenGL_main PROPERTY CXX_STANDARD 23)
 endif()
 
 

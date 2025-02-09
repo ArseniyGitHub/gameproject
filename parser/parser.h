@@ -306,13 +306,17 @@ using _defParserSize = __ParserByteCopy<ui64>;
 using _defParserText =     __ParserText<ui64>;
 template <typename szType, fn<ui64, __ParserByteCopy<szType>&> unParseS> using _EcoParserElem = __defParserVer<__NullParserType, __ParserByteCopy<szType>, __ParserBlock, __NullParserSize<ui64>, unParseS>;
 template <typename typeT> using _defParserElem                               =                                    __defParserVer<__ParserText<ui64>, typeT, __ParserBlock, __ParserByteCopy<ui64>, nullptr>;
+struct _NullPointer {};
 
 using _defParserText = __ParserText<ui64>;
 template <typename szType> struct Parser2 {
+	using elType = _defParserElem<szType>;
 	std::vector<_defParserElem<szType>> data;
+	elType* boofer = nullptr;
 	
 	_defParserElem<szType>& operator [](ui64 ind) {
 		if (ind + 1 > data.size()) data.resize(ind + 1);
+		boofer = &(data[ind]);
 		return data[ind];
 	}
 	
@@ -320,6 +324,7 @@ template <typename szType> struct Parser2 {
 		ui64 i = 0;  _defParserElem<szType> b;
 		while (i < data.size() && data[i].name.text != name) i++;
 		if (i == data.size()) data.push_back(b);
+		boofer = &(data[i]);
 		return data[i];
 	}
 	
@@ -350,6 +355,14 @@ template <typename szType> struct Parser2 {
 		}
 		return;
 	}
+
+	elType& l() {
+		if (boofer) return *boofer; else throw _NullPointer();
+	}
+
+	elType& operator *() {
+		return l();
+	}
 	
 };
 
@@ -376,24 +389,3 @@ template <typename szType, fn<ui64, __ParserByteCopy<szType>&> unParseProc> stru
 		return;
 	}
 };
-
-/*
-template <typename variableT>
-class _ParserV2 {
-	static __bytes parse(std::vector<variableT> input) {
-		__bytes ret;   __bytes boofer;
-		for (variableT& el : input) {
-			boofer = el.parse();
-			ret.insert(ret.end(), boofer.begin(), boofer.end());
-		}
-		return ret;
-	}
-	static std::vector<variableT> unParse(__bytes input) {
-		std::vector<variableT> ret;
-		while (!ret.empty()) {
-			ret.push_back(variableT::unParse(input));
-		}
-		return ret;
-	}
-};
-*/
