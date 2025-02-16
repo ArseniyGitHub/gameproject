@@ -87,7 +87,7 @@ int main() {
 		glLoadIdentity();
 		glTranslatef(0, 0, -5);
 		static float angle = 0;  angle += 250 * elapsedTime.asSeconds();
-		glRotatef(angle, 1, 1, 0);
+		glRotatef(angle, 1, 0.73, 0.19);
 		drawCube(tex);
 		windows10.display();
 		
