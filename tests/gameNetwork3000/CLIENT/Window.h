@@ -2,64 +2,8 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include <string>
-#include "../MATH/math.hpp"
-
-class CustomWormCircle : public sf::CircleShape {
-
-};
-
-class Camera : public sf::View {};
-
-class Worm {
-private:
-	std::vector<CustomWormCircle> body;
-	sf::Vector2f targetPos;
-	float speed;
-	float headSpeed;
-	size_t colorSeed = time(nullptr);
-public:
-	Worm(size_t sz = 5, sf::Vector2f startPos = sf::Vector2f(0, 0), sf::Vector2f _targetPos = sf::Vector2f(0, 0), float spd = 100, float headSpd = 1000) : targetPos(_targetPos), speed(spd), headSpeed(headSpd) {
-		generateWorm(sz, startPos);
-	}
-	void generateWorm(size_t sz, sf::Vector2f stPos) {
-		body.clear();
-		//body.resize(sz);
-		srand(colorSeed);
-		sf::Color randColor(rand(), rand(), rand());
-		for (size_t i = 0; i < sz; i++)
-		{
-			CustomWormCircle buffer;
-			buffer.setFillColor(sf::Color(randColor.r * i, randColor.g * i, randColor.b * i, 210));
-			buffer.setRadius(sz / 2);
-			buffer.setOrigin(sz / 2, sz / 2);
-			buffer.setPosition(stPos);
-			body.emplace_back(std::move(buffer));
-		}
-	}
-	const sf::Vector2f& getTargetPos() const {
-		return targetPos;
-	}
-	void setTargetPos(const sf::Vector2f& obj) {
-		targetPos = obj;
-	}
-	std::vector<CustomWormCircle>& getBody() {
-		return body;
-	}
-	void draw(sf::RenderWindow& window) {
-		for (auto& el : body) {
-			window.draw(el);
-		}
-	}
-	void update(float dTime) {
-		for (size_t i = 0; i < body.size() - 1; i++)
-		{
-			sf::Vector2f direction = body[i].getPosition() - body[i + 1].getPosition();
-			body[i + 1].move(direction * dTime * speed);
-		}
-		sf::Vector2f normDir = getNormalizedDirection(body[0].getPosition(), targetPos);
-		body[0].move(normDir * dTime * headSpeed);
-	}
-};
+#include <spdlog/spdlog.h>
+#include "../PLAYER/Worm.cpp"
 
 class Window {
 	sf::RenderWindow windows;
@@ -68,10 +12,20 @@ public:
 
 	}
 	void mainLoop() {
-		Worm player(pow(10, 2) * 2, sf::Vector2f(windows.getSize().x / 2, windows.getSize().y / 2));
+		std::shared_ptr<Worm> player;
+		player = std::make_shared<Worm>(pow(10, 2) * 2, sf::Vector2f(windows.getSize().x / 2, windows.getSize().y / 2));
+		Camera cam(windows);
+		cam.setTargetObject(player);
+		sf::Vector2f windowS;
 		sf::Clock timer;
 		sf::Time time;
+
+		sf::Texture ground;
+		ground.loadFromFile("ground.jpg");
+		sf::Sprite sprite(ground);
+
 		while (windows.isOpen()) {
+			windowS = sf::Vector2f(windows.getSize().x, windows.getSize().y);
 			sf::Time elapsedTime = timer.restart();
 			time += elapsedTime;
 			sf::Event e;
@@ -87,17 +41,19 @@ public:
 						break;
 					}
 					break;
-				case sf::Event::MouseMoved:
-					sf::Vector2f mousePos = windows.mapPixelToCoords(sf::Vector2i(e.mouseMove.x, e.mouseMove.y));
-					player.setTargetPos(mousePos);
-					break;
 				}
 
 			}
-			player.update(elapsedTime.asSeconds());
+			sf::Vector2f mousePos = windows.mapPixelToCoords(sf::Mouse::getPosition(windows));
+			player->setTargetPos(mousePos);
+			player->update(elapsedTime.asSeconds());
+			cam.update(windows, elapsedTime.asSeconds());
+			spdlog::info("coords: x={}, y={}", player->getPosition().x, player->getPosition().y);
 			windows.clear(sf::Color::White);
 
-			player.draw(windows);
+			windows.draw(sprite);
+
+			player->draw(windows);
 			windows.display();
 
 		}

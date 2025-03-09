@@ -2,7 +2,7 @@
 #include <iostream>
 #include <map>
 
-
+using namespace Parser;
 
 int main() {
 	

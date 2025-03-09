@@ -14,6 +14,7 @@
 #include <fmt/core.h>
 #include <imgui_freetype.h>
 #include <box2d/box2d.h>
+#include "../PLAYER/Worm.cpp"
 
 using json = nlohmann::json;
 
@@ -24,6 +25,7 @@ class Server {
 	sf::TcpListener           listener;
 	std::vector<sf::UdpSocket*>udpClients;
 	std::vector<sf::TcpSocket*>   clients;
+	std::vector<Worm*> players;
 	unsigned __int16 port;
 	void broadcastMessage(json);
 	void broadcastMessage(json, sf::TcpSocket*);
