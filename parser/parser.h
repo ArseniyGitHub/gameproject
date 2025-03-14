@@ -136,7 +136,7 @@ public:
 };
 */
 
-namespace Parser {
+namespace PARSER {
 
 	using __bytes = std::vector<ui8>;
 
@@ -161,12 +161,12 @@ namespace Parser {
 		__ParserByteCopy(const __ParserByteCopy& from) : el(from.el) {}
 		__ParserByteCopy(_Type from) : el(from) {}
 		__ParserByteCopy() {}
-		__ParserByteCopy& unParse(__bytes* _from) {
-			__bytes& from = *_from;
-			for (ui64 i = 0; i < sizeof(_Type) && i < from.size(); i++) {
-				((ui8*)(&el))[i] = from[i];
+		__ParserByteCopy& unParse(__bytes* from) {
+			//__bytes& from = *_from;
+			for (ui64 i = 0; i < sizeof(_Type) && i < from->size(); i++) {
+				((ui8*)(&el))[i] = (*from)[i];
 			}
-			from.erase(from.begin(), from.begin() + sizeof(_Type));
+			from->erase(from->begin(), from->begin() + sizeof(_Type));
 			return *this;
 		}
 		__bytes* parse() {
@@ -195,19 +195,18 @@ namespace Parser {
 	template <typename _sizeType>
 	struct __ParserText {
 		using sizeType = __ParserByteCopy<_sizeType>;
-		std::string text;
+		std::string text = "";
 		__ParserText(const __ParserText& from) : text(from.text) {}
 		__ParserText(const std::string& from) : text(from) {}
-		template <ui64 sz> __ParserText(const char(&_text)[sz]) : text(_text) {}
+		//template <ui64 sz> __ParserText(const char(&_text)[sz]) : text(_text) {}
 		__ParserText() {}
-		__bytes* parse() {
-			__bytes* boofer;  __bytes bf2(text.size());
+		__bytes* parse(bool writeSize = true) {
+			__bytes* boofer; __bytes bf2(text.size());
 			sizeType sz = text.size();
-
-			boofer = sz.parse();
-			//if (boofer != nullptr && !boofer->empty()) ret.insert(ret.end(), boofer->begin(), boofer->end());
-			//delete boofer;
-			if (boofer == nullptr) boofer = new __bytes;
+			if (writeSize) {
+				boofer = sz.parse();
+			}
+			else boofer = new __bytes;
 
 			for (ui64 i = 0; i < text.size(); i++) {
 				bf2[i] = text[i];
@@ -216,14 +215,15 @@ namespace Parser {
 			return boofer;
 		}
 
-		__ParserText& unParse(__bytes* _from) {
-			text.clear();
+		__ParserText& unParse(__bytes* _from, bool readSize = true, size_t _sz = 0) {
 			__bytes& from = *_from;
 			sizeType sz;
-			sz.unParse(_from);
+			if (readSize) sz.unParse(_from);
+			else sz.el = _sz;;
+			
 			text.resize(sz.el);
 			for (ui64 i = 0; i < sz.el && i < from.size(); i++) {
-				this->text[i] = from[i];
+				text[i] = from[i];
 			}
 			from.erase(from.begin(), from.begin() + sz.el);
 			return *this;
@@ -233,24 +233,30 @@ namespace Parser {
 
 	struct __ParserBlock {
 		struct __NotFullPacket {};
-		__bytes data;
+		__ParserBlock(const __ParserBlock& from) {
+			data = new __bytes(*from.data);
+		}
+		__ParserBlock() {
+			data = new __bytes();
+		}
+		__bytes* data = nullptr;
 		__bytes* parse(ui64 sz) {
-			if (sz != data.size()) throw __NotFullPacket();
+			if (sz != data->size()) throw __NotFullPacket();
 			__bytes* ret = new __bytes;
-			ret->insert(ret->begin(), data.begin(), data.end());
+			ret->insert(ret->begin(), data->begin(), data->end());
 			return ret;
 		}
 		void unParse(__bytes* _from, ui64 sz) {
 			__bytes& from = *_from;
-			data.clear();
-			data.insert(data.begin(), from.begin(), from.begin() + sz);
+			data->clear();
+			data->insert(data->begin(), from.begin(), from.begin() + sz);
 			from.erase(from.begin(), from.begin() + sz);
 		}
 	};
 
 	template <typename nameType, typename typeType, typename blockType, typename sizeType>
 	struct __defParserVer {
-		fn<ui64, typeType&> _Unparse_Process;
+		fn<ui64, typeType&> _Unparse_Process = nullptr;
 	    nameType name;   sizeType size;  typeType type;  blockType data;  void* elemBoofer = nullptr;  ui64 bufferSize = 0;
 		__defParserVer(sizeType _size, nameType _name, typeType _type, blockType _data) : size(_size), name(_name), type(_type), data(_data) {}
 		__defParserVer() {}
@@ -290,6 +296,14 @@ namespace Parser {
 			elemBoofer = new type;
 			return *this;
 		}
+		template <typename type> __defParserVer& deleteBoofer() {
+			delete ((type*)elemBoofer);
+			return *this;
+		}
+		__defParserVer& deleteBooferAsBytes() {
+			for (ui8* i = (ui8*)elemBoofer; i < (ui8*)elemBoofer + bufferSize; i++) delete i;
+			return *this;
+		}
 		template <typename type> type& getBoofer() {
 			return *(type*)elemBoofer;
 		}
@@ -313,6 +327,7 @@ namespace Parser {
 	struct _NullPointer {};
 
 	using _defParserText = __ParserText<ui64>;
+	/*
 	template <typename szType> struct Parser2 {
 		using elType = _defParserElem<szType>;
 		std::vector<_defParserElem<szType>> data;
@@ -393,6 +408,6 @@ namespace Parser {
 			return;
 		}
 	};
-
+	*/
 
 }

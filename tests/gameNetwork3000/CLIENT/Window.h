@@ -5,6 +5,20 @@
 #include <spdlog/spdlog.h>
 #include "../PLAYER/Worm.cpp"
 
+template <typename type, typename type2> sf::Vector2<type> operator * (const sf::Vector2<type>& a, const sf::Vector2<type2>& b) {
+	sf::Vector2<type> ret;
+	ret.x = a.x * b.x;
+	ret.y = a.y * b.y;
+	return ret;
+}
+
+template <typename type, typename type2> sf::Vector2<type> operator / (const sf::Vector2<type>& a, const sf::Vector2<type2>& b) {
+	sf::Vector2<type> ret;
+	ret.x = a.x / b.x;
+	ret.y = a.y / b.y;
+	return ret;
+}
+
 class Window {
 	sf::RenderWindow windows;
 public:
@@ -47,11 +61,21 @@ public:
 			sf::Vector2f mousePos = windows.mapPixelToCoords(sf::Mouse::getPosition(windows));
 			player->setTargetPos(mousePos);
 			player->update(elapsedTime.asSeconds());
-			cam.update(windows, elapsedTime.asSeconds());
-			spdlog::info("coords: x={}, y={}", player->getPosition().x, player->getPosition().y);
-			windows.clear(sf::Color::White);
 
-			windows.draw(sprite);
+			//spdlog::info("coords: x={}, y={}", player->getPosition().x, player->getPosition().y);
+
+			sf::Vector2i currentChank(cam.getCenter().x / ground.getSize().x, cam.getCenter().y / ground.getSize().y);
+			sf::Vector2i screenChanks(windows.getSize().x / ground.getSize().x + 4, windows.getSize().y / ground.getSize().y + 4);
+
+
+			for (unsigned __int32 x = 0; x < screenChanks.x; x++) {
+				for (unsigned __int32 y = 0; y < screenChanks.y; y++) {
+
+					sprite.setPosition((sf::Vector2f)ground.getSize() * (currentChank - (screenChanks / (int)2) + sf::Vector2i(x, y)));
+					windows.draw(sprite);
+				}
+			}
+			cam.update(windows, elapsedTime.asSeconds());
 
 			player->draw(windows);
 			windows.display();
