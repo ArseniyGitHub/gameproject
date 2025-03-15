@@ -296,12 +296,14 @@ namespace PARSER {
 			elemBoofer = new type;
 			return *this;
 		}
-		template <typename type> __defParserVer& deleteBoofer() {
-			delete ((type*)elemBoofer);
+		template <typename type> __defParserVer& deleteBooferAs() {
+			if (elemBoofer != nullptr) delete ((type*)elemBoofer);
+			elemBoofer = nullptr;   bufferSize = 0;
 			return *this;
 		}
 		__defParserVer& deleteBooferAsBytes() {
-			for (ui8* i = (ui8*)elemBoofer; i < (ui8*)elemBoofer + bufferSize; i++) delete i;
+			delete[](ui8*)elemBoofer;
+			elemBoofer = nullptr;   bufferSize = 0;
 			return *this;
 		}
 		template <typename type> type& getBoofer() {

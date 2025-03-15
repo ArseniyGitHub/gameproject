@@ -14,7 +14,21 @@ namespace ParserTypes {
 
 template <typename sizeType = ui32>
 class Parser {
-	using _defEl = __defParserVer<ParserTypes::txt<sizeType>, __ParserByteCopy<sizeType>, __ParserBlock, __ParserByteCopy<sizeType>>;
+	struct _defEl : public __defParserVer<ParserTypes::txt<sizeType>, __ParserByteCopy<sizeType>, __ParserBlock, __ParserByteCopy<sizeType>> {
+		void deleteBoofer() {
+			switch (this->type.el) {
+			case standardTypes::_elems:
+				this->deleteBooferAs<Parser>();
+				break;
+			default:
+				this->deleteBooferAsBytes();
+				break;
+			}
+		}
+		~_defEl() {
+			deleteBoofer();
+		}
+	};
 public:
 	__ParserByteCopy<sizeType> elemsCount = 0;
 	std::vector<_defEl*> elems;
@@ -24,10 +38,10 @@ public:
 public:
 	enum standardTypes {
 		_null,
-		_elems, 
+		_elems,
 	    _int,
 		_uint,
-		_float, 
+		_float,
 		_string,
 		end
 	};
@@ -39,6 +53,14 @@ public:
 			elems[i] = new _defEl(*from.elems[i]);
 	}
 	Parser() {}
+	void clear() {
+		for (_defEl* el : elems)
+			delete el;
+		elems.clear();
+	}
+	~Parser() {
+		clear();
+	}
 	
 	/// <summary>
 	/// не гарантируем безопасность ваших личных данных!!!
@@ -46,7 +68,7 @@ public:
 	/// </summary>
 	/// <param name="from"></param>
 	void parse(__bytes* from) {
-		elems.clear();
+		clear();
 		elemsCount.unParse(from);
 		elems.resize(elemsCount.el);
 		for (ui32 i = 0; i < elemsCount.el; i++) {
@@ -150,6 +172,7 @@ public:
 		}
 		_Element() : element(new _defEl) {}
 
+
 		//_Element* back = nullptr;
 
 		//   element type
@@ -193,7 +216,7 @@ public:
 
 		_Element& operator [] (std::string name) {
 			if (element->type.el != standardTypes::_elems) {
-				element->deleteBooferAsBytes();
+				element->deleteBoofer();
 				element->type.el = standardTypes::_elems;
 			}
 			if (element->elemBoofer == nullptr) {
@@ -216,7 +239,7 @@ public:
 
 		_Element& operator [] (unsigned __int64 i) {
 			if (element->type.el != standardTypes::_elems) {
-				element->deleteBooferAsBytes();
+				element->deleteBoofer();
 				element->type.el = standardTypes::_elems;
 			}
 			if (element->elemBoofer == nullptr) {
@@ -224,48 +247,50 @@ public:
 				element->bufferSize = sizeof(Parser);
 			}
 			Parser* rt = (Parser*)element->elemBoofer;
-			if (!(rt->elems.size() > i))
-				rt->elems.resize(i + 1);
 			_Element* nw = new _Element;
-			rt->elems[i] = nw->element;
+			if (!(rt->elems.size() > i)) {
+				rt->elems.resize(i + 1);
+				rt->elems[i] = nw->element;
+			}
+			else nw->element = rt->elems[i];
 			return *nw;
 		}
 		void operator = (Parser& from) {  //  copy
-			element->deleteBooferAsBytes();
+			element->deleteBoofer();
 			element->type.el = standardTypes::_elems;
 			element->bufferSize = sizeof(Parser);
 			element->elemBoofer = new Parser(from);
 		}
 		void operator = (Parser* from) {  //  using! 
-			element->deleteBooferAsBytes();
+			element->deleteBoofer();
 			element->type.el = standardTypes::_elems;
 			element->bufferSize = sizeof(Parser);
 			element->elemBoofer = from;
 		}
 
 		void operator = (ui64 num) {
-			element->deleteBooferAsBytes();
+			element->deleteBoofer();
 			element->type.el = standardTypes::_uint;
 			element->bufferSize = sizeof(ui64);
 			element->elemBoofer = new ui64;
 			*(ui64*)element->elemBoofer = num;
 		}
 		void operator = (i64 num) {
-			element->deleteBooferAsBytes();
+			element->deleteBoofer();
 			element->type.el = standardTypes::_int;
 			element->bufferSize = sizeof(i64);
 			element->elemBoofer = new i64;
 			*(i64*)element->elemBoofer = num;
 		}
 		void operator = (std::string& el) {
-			element->deleteBooferAsBytes();
+			element->deleteBoofer();
 			element->type.el = standardTypes::_string;
 			element->bufferSize = sizeof(std::string);
 			element->elemBoofer = new std::string;
 			*(std::string*)element->elemBoofer = el;
 		}
 		void operator = (const char* el) {
-			element->deleteBooferAsBytes();
+			element->deleteBoofer();
 			element->type.el = standardTypes::_string;
 			element->bufferSize = sizeof(std::string);
 			element->elemBoofer = new std::string;
@@ -273,14 +298,14 @@ public:
 			element->size.el = ((std::string*)element->elemBoofer)->size();
 		}
 		void operator = (float num) {
-			element->deleteBooferAsBytes();
+			element->deleteBoofer();
 			element->type.el = standardTypes::_float;
 			element->bufferSize = sizeof(float);
 			element->elemBoofer = new float;
 			*(float*)element->elemBoofer = num;
 		}
 		void operator = (double num) {
-			element->deleteBooferAsBytes();
+			element->deleteBoofer();
 			element->type.el = standardTypes::_float;
 			element->bufferSize = sizeof(double);
 			element->elemBoofer = new double;
