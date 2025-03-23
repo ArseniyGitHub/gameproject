@@ -1,5 +1,5 @@
 #pragma once
-#include "parser.h"
+#include "netparser.h"
 #include <list>
 #include <memory>
 
@@ -14,6 +14,7 @@ namespace ParserTypes {
 
 template <typename sizeType = ui32>
 class Parser {
+public:
 	struct _defEl : public __defParserVer<ParserTypes::txt<sizeType>, __ParserByteCopy<sizeType>, __ParserBlock, __ParserByteCopy<sizeType>> {
 		void deleteBoofer() {
 			switch (this->type.el) {
@@ -29,7 +30,6 @@ class Parser {
 			deleteBoofer();
 		}
 	};
-public:
 	__ParserByteCopy<sizeType> elemsCount = 0;
 	std::vector<_defEl*> elems;
 	__bytes* getCpy(__bytes* from) {
@@ -170,6 +170,7 @@ public:
 			if (element != nullptr) delete element;
 			element = new _defEl(from);
 		}
+		_Element(_defEl* from) : element(from) {}
 		_Element() : element(new _defEl) {}
 
 
@@ -247,13 +248,16 @@ public:
 				element->bufferSize = sizeof(Parser);
 			}
 			Parser* rt = (Parser*)element->elemBoofer;
-			_Element* nw = new _Element;
+			
 			if (!(rt->elems.size() > i)) {
+				size_t oldSize = rt->elems.size();
 				rt->elems.resize(i + 1);
-				rt->elems[i] = nw->element;
+				for (size_t i = oldSize; i < rt->elems.size(); i++) {
+					rt->elems[i] = new _defEl;
+				}
 			}
-			else nw->element = rt->elems[i];
-			return *nw;
+			_Element* r = new _Element(rt->elems[i]);
+			return *r;
 		}
 		void operator = (Parser& from) {  //  copy
 			element->deleteBoofer();
@@ -337,8 +341,13 @@ public:
 	}
 
 	_Element& operator [] (unsigned __int64 i) {
-		if (!(elems.size() > i))
+		if (!(elems.size() > i)) {
+			size_t oldSize = elems.size();
 			elems.resize(i + 1);
+			for (size_t i = oldSize; i < elems.size(); i++) {
+				elems[i] = new _defEl;
+			}
+		}
 		return (elems)[i];
 	}
 };

@@ -44,6 +44,7 @@ private:
 	float speed;
 	float headSpeed;
 	size_t colorSeed = time(nullptr);
+	std::string name;
 public:
 	const sf::Vector2f& getPosition() const override {
 		return body.empty() ? sf::Vector2f() : body[0].getPosition();
@@ -61,7 +62,7 @@ public:
 			CustomWormCircle buffer;
 			buffer.setFillColor(sf::Color(randColor.r * i, randColor.g * i, randColor.b * i, 210));
 			buffer.setRadius(sz / 2);
-			buffer.setOrigin(sz / 2, sz / 2);
+			buffer.setOrigin({ (float)sz / 2, (float)sz / 2 });
 			buffer.setPosition(stPos);
 			body.emplace_back(std::move(buffer));
 		}
@@ -69,8 +70,14 @@ public:
 	const sf::Vector2f& getTargetPos() const {
 		return targetPos;
 	}
+	const std::string& getName() const {
+		return name;
+	}
 	void setTargetPos(const sf::Vector2f& obj) {
 		targetPos = obj;
+	}
+	void setName(const std::string& from) {
+		name = from;
 	}
 	std::vector<CustomWormCircle>& getBody() {
 		return body;

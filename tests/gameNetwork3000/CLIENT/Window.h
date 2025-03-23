@@ -4,6 +4,7 @@
 #include <string>
 #include <spdlog/spdlog.h>
 #include "../PLAYER/Worm.cpp"
+#include "ParserAPI.hpp"
 
 template <typename type, typename type2> sf::Vector2<type> operator * (const sf::Vector2<type>& a, const sf::Vector2<type2>& b) {
 	sf::Vector2<type> ret;
@@ -22,12 +23,12 @@ template <typename type, typename type2> sf::Vector2<type> operator / (const sf:
 class Window {
 	sf::RenderWindow windows;
 public:
-	Window(size_t x = 800, size_t y = 800, std::wstring name = L"Epic game") : windows(sf::VideoMode(x, y), name) {
+	Window(size_t x = 800, size_t y = 800, std::wstring name = L"Epic game") : windows(sf::VideoMode(sf::Vector2u(x, y)), name) {
 
 	}
 	void mainLoop() {
 		std::shared_ptr<Worm> player;
-		player = std::make_shared<Worm>(pow(10, 2) * 2, sf::Vector2f(windows.getSize().x / 2, windows.getSize().y / 2));
+		player = std::make_shared<Worm>(5, sf::Vector2f(windows.getSize().x / 2, windows.getSize().y / 2));
 		Camera cam(windows);
 		cam.setTargetObject(player);
 		sf::Vector2f windowS;
@@ -38,25 +39,17 @@ public:
 		ground.loadFromFile("ground.jpg");
 		sf::Sprite sprite(ground);
 
+		Parser netparser;
+
 		while (windows.isOpen()) {
 			windowS = sf::Vector2f(windows.getSize().x, windows.getSize().y);
 			sf::Time elapsedTime = timer.restart();
 			time += elapsedTime;
-			sf::Event e;
-			while (windows.pollEvent(e)) {
-				switch (e.type) {
-
-				case sf::Event::Closed:
-					break;
-				case sf::Event::KeyPressed:
-					switch (e.key.code) {
-					case sf::Keyboard::Escape:
-						windows.close();
-						break;
-					}
-					break;
+			while (const std::optional e = windows.pollEvent()) {
+				if (e->is<sf::Event::Closed>()) {
+					//windows.close();
 				}
-
+				
 			}
 			sf::Vector2f mousePos = windows.mapPixelToCoords(sf::Mouse::getPosition(windows));
 			player->setTargetPos(mousePos);
@@ -80,6 +73,20 @@ public:
 			player->draw(windows);
 			windows.display();
 
+			netparser.clear();
+			for (size_t i = 0; i < player->getBody().size() * 2; i += 2) {
+				netparser["coords"][i] = (float)player->getBody()[i / 2].getPosition().x;
+				netparser["coords"][i + 1] = (float)player->getBody()[i / 2].getPosition().y;
+				spdlog::info("type: {}", netparser["parser"][i].element->type.el);
+			}
+			__bytes* cpy = netparser.pack();
+
+			netparser.clear();
+			netparser.parse(cpy);
+
+			for (size_t i = 0; i < player->getBody().size() * 2; i += 2) {
+				player->getBody()[i / 2].setPosition(sf::Vector2f(netparser["coords"][i].getAs<float>(), netparser["coords"][i + 1].getAs<float>()));
+			}
 		}
 	}
 	void testScene(Worm& player, float time) {

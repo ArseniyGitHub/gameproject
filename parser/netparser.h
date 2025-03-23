@@ -257,7 +257,7 @@ namespace PARSER {
 	template <typename nameType, typename typeType, typename blockType, typename sizeType>
 	struct __defParserVer {
 		fn<ui64, typeType&> _Unparse_Process = nullptr;
-	    nameType name;   sizeType size;  typeType type;  blockType data;  void* elemBoofer = nullptr;  ui64 bufferSize = 0;
+	    nameType name;   sizeType size = 0;  typeType type = 0;  blockType data;  void* elemBoofer = nullptr;  ui64 bufferSize = 0;
 		__defParserVer(sizeType _size, nameType _name, typeType _type, blockType _data) : size(_size), name(_name), type(_type), data(_data) {}
 		__defParserVer() {}
 		__defParserVer(const __defParserVer& from) : size(from.size), name(from.name), type(from.type), data(from.data) {}
