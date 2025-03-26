@@ -49,7 +49,7 @@ public:
 	const sf::Vector2f& getPosition() const override {
 		return body.empty() ? sf::Vector2f() : body[0].getPosition();
 	}
-	Worm(size_t sz = 5, sf::Vector2f startPos = sf::Vector2f(0, 0), sf::Vector2f _targetPos = sf::Vector2f(0, 0), float spd = 100, float headSpd = 1000) : targetPos(_targetPos), speed(spd), headSpeed(headSpd) {
+	Worm(size_t sz = 200, sf::Vector2f startPos = sf::Vector2f(0, 0), sf::Vector2f _targetPos = sf::Vector2f(0, 0), float spd = 100, float headSpd = 1000) : targetPos(_targetPos), speed(spd), headSpeed(headSpd) {
 		generateWorm(sz, startPos);
 	}
 	void generateWorm(size_t sz, sf::Vector2f stPos) {

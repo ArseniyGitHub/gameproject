@@ -16,6 +16,7 @@ template <typename sizeType = ui32>
 class Parser {
 public:
 	struct _defEl : public __defParserVer<ParserTypes::txt<sizeType>, __ParserByteCopy<sizeType>, __ParserBlock, __ParserByteCopy<sizeType>> {
+		Parser** _forParserRead = (Parser**) & (this->elemBoofer);
 		void deleteBoofer() {
 			switch (this->type.el) {
 			case standardTypes::_elems:

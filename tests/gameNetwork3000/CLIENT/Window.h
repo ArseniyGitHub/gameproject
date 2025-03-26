@@ -77,7 +77,6 @@ public:
 			for (size_t i = 0; i < player->getBody().size() * 2; i += 2) {
 				netparser["coords"][i] = (float)player->getBody()[i / 2].getPosition().x;
 				netparser["coords"][i + 1] = (float)player->getBody()[i / 2].getPosition().y;
-				spdlog::info("type: {}", netparser["parser"][i].element->type.el);
 			}
 			__bytes* cpy = netparser.pack();
 
