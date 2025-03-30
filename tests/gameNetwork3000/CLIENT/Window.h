@@ -27,8 +27,8 @@ public:
 
 	}
 	void mainLoop() {
-		std::shared_ptr<Worm> player;
-		player = std::make_shared<Worm>(5, sf::Vector2f(windows.getSize().x / 2, windows.getSize().y / 2));
+		std::shared_ptr<Worm> player(new Worm(100));
+		player = std::make_shared<Worm>(5000, sf::Vector2f(windows.getSize().x / 2, windows.getSize().y / 2));
 		Camera cam(windows);
 		cam.setTargetObject(player);
 		sf::Vector2f windowS;
@@ -40,6 +40,8 @@ public:
 		sf::Sprite sprite(ground);
 
 		Parser netparser;
+
+		windows.setFramerateLimit(120);
 
 		while (windows.isOpen()) {
 			windowS = sf::Vector2f(windows.getSize().x, windows.getSize().y);
@@ -58,7 +60,7 @@ public:
 			//spdlog::info("coords: x={}, y={}", player->getPosition().x, player->getPosition().y);
 
 			sf::Vector2i currentChank(cam.getCenter().x / ground.getSize().x, cam.getCenter().y / ground.getSize().y);
-			sf::Vector2i screenChanks(windows.getSize().x / ground.getSize().x + 4, windows.getSize().y / ground.getSize().y + 4);
+			sf::Vector2i screenChanks(windows.getSize().x / ground.getSize().x + 4 * player->getDimentinalK(), windows.getSize().y / ground.getSize().y + 4 * player->getDimentinalK());
 
 
 			for (unsigned __int32 x = 0; x < screenChanks.x; x++) {
@@ -68,15 +70,18 @@ public:
 					windows.draw(sprite);
 				}
 			}
-			cam.update(windows, elapsedTime.asSeconds());
+			
 
 			player->draw(windows);
 			windows.display();
-
+			cam.update(windows, elapsedTime.asSeconds());
+			
+			
 			netparser.clear();
 			for (size_t i = 0; i < player->getBody().size() * 2; i += 2) {
 				netparser["coords"][i] = (float)player->getBody()[i / 2].getPosition().x;
 				netparser["coords"][i + 1] = (float)player->getBody()[i / 2].getPosition().y;
+				
 			}
 			__bytes* cpy = netparser.pack();
 
@@ -86,6 +91,8 @@ public:
 			for (size_t i = 0; i < player->getBody().size() * 2; i += 2) {
 				player->getBody()[i / 2].setPosition(sf::Vector2f(netparser["coords"][i].getAs<float>(), netparser["coords"][i + 1].getAs<float>()));
 			}
+			
+			
 		}
 	}
 	void testScene(Worm& player, float time) {
