@@ -44,15 +44,17 @@ add_executable (gameproject  "main.cpp" ${SOURCES})
 #add_executable (candle_test "tests/CandleTest.cpp")
 add_executable(network_test_server "tests/server_data/server.cpp" "tests/server_data/server.h" "tests/server_data/main.cpp")
 add_executable(network_test_client "tests/client_data/client.cpp" "tests/client_data/client.h" "tests/client_data/main.cpp" "tests/client_data/window.h" "tests/client_data/window.cpp")
-add_executable(test_client "tests/gameNetwork3000/CLIENT/Client.cpp" "tests/gameNetwork3000/CLIENT/Client.h" "tests/gameNetwork3000/CLIENT/Window.cpp" "tests/gameNetwork3000/CLIENT/Window.h" "tests/gameNetwork3000/CLIENT/main.cpp" "parser/parserAPI.hpp" "tests/gameNetwork3000/MATH/math.hpp")
-add_executable(test_server "tests/gameNetwork3000/SERVER/Server.cpp" "tests/gameNetwork3000/SERVER/Server.h" "tests/gameNetwork3000/SERVER/main.cpp" "parser/parserAPI.hpp" "tests/gameNetwork3000/MATH/math.hpp")
+add_executable(test_client "tests/gameNetwork3000/CLIENT/Client.cpp" "tests/gameNetwork3000/CLIENT/Client.h" "tests/gameNetwork3000/CLIENT/Window.cpp" "tests/gameNetwork3000/CLIENT/Window.h" "tests/gameNetwork3000/CLIENT/main.cpp" "tests/gameNetwork3000/MATH/math.hpp" "parser2/mainParser.hpp")
+add_executable(test_server "tests/gameNetwork3000/SERVER/Server.cpp" "tests/gameNetwork3000/SERVER/Server.h" "tests/gameNetwork3000/SERVER/main.cpp" "tests/gameNetwork3000/MATH/math.hpp" "parser2/mainParser.hpp")
 add_executable(OpenGL_main "tests/OpenGL/OpenGL_main")
 add_library(netparser STATIC "parser/netparser.h" "parser/parser.cpp" "parser/parserAPI.hpp")
+add_library(netparser2 STATIC "parser2/parserElem.hpp" "parser2/parserElem.cpp" "parser2/mainParser.hpp" "parser2/mainParser.cpp")
 add_executable(test_parser "parser/parserAPI.hpp" "parser/test.cpp")
 
 
 target_include_directories("gameproject" PRIVATE "include")
 ############################################################################################################################################################################################################################################################################################################################################################################################################################################################################################################################
+######################################################################################################################################################################################
 target_link_libraries(gameproject PRIVATE spdlog::spdlog)
 target_link_libraries(network_test_server PRIVATE spdlog::spdlog SFML::System SFML::Network SFML::Graphics SFML::Window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot ImGui-SFML::ImGui-SFML)
 target_link_libraries(network_test_client PRIVATE spdlog::spdlog SFML::System SFML::Network SFML::Graphics SFML::Window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot ImGui-SFML::ImGui-SFML)
@@ -70,6 +72,7 @@ target_link_libraries(gameproject PRIVATE implot::implot)
 target_link_libraries(OpenGL_main PRIVATE SFML::Graphics SFML::Window SFML::System spdlog::spdlog ${OPENGL_LIBRARIES})
 
 include_directories("parser")
+include_directories("parser2")
 #target_link_libraries()
 
 
@@ -99,6 +102,7 @@ if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET test_client PROPERTY CXX_STANDARD 23)
   set_property(TARGET test_server PROPERTY CXX_STANDARD 23)
   set_property(TARGET netparser PROPERTY CXX_STANDARD 23)
+  set_property(TARGET netparser2 PROPERTY CXX_STANDARD 23)
   set_property(TARGET test_parser PROPERTY CXX_STANDARD 23)
   set_property(TARGET OpenGL_main PROPERTY CXX_STANDARD 23)
 endif()
