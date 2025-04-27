@@ -11,12 +11,12 @@ int main() {
 		configFile.close();
 	}
 	else {
-		config["port"] = 12345;
+		config["port"] = 222 * 3;
 		std::ofstream ofConfig(configPath);
 		ofConfig << config.dump(4);
 		ofConfig.close();
 	}
-	unsigned __int16 port = 12345;
+	unsigned __int16 port = 222 * 3;
 	if (config.contains("port")) {
 		port = config["port"].get<unsigned __int16>();
 	}

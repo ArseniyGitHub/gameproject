@@ -1,15 +1,46 @@
-#include "Server.h"
+﻿#include "Server.h"
 #include <iostream>
 #include <SFML/Graphics.hpp>
+#include <SFML/Network.hpp>
 #include "../MATH/math.hpp"
+#include <unordered_map>
 
 void Server::start() {
+	if (udp.bind(port) == sf::Socket::Status::Done) {
+		udp.setBlocking(false);
+		spdlog::error("все норм");
+		udpThread = std::thread([this]() {
+			sf::SocketSelector selector;
+			selector.add(udp);
+			std::unordered_map<unsigned __int16, std::optional<sf::IpAddress>> clientsMap;
+			while (true) {
+				if (selector.wait(sf::milliseconds(10))) {
+					if (selector.isReady(udp)) {
+						std::byte buffer[1024];
+						size_t sz;
+						std::optional<sf::IpAddress> from;
+						unsigned __int16 senderPort;
+						auto status = udp.receive(buffer, 1024, sz, from, senderPort);
+						;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; ;;;;;;; ;; ;; ; ; ; ; ; ; ; ; ; ;; ; ; ; ; ; ; ; ;;;;;;; ;;; ;; ;;; ;;; ;;; ;;;;;;;;;;;; ;; ;;;; ;;; ;;; ;;;;;;;;; ;;; ;;; ;;; ;;; ;;;;;;; ; ;; ; ;; ;;; ;; ;; ;; ;;;;;;;;;;; ;; ;; ;;;; ;; ;; ;; ;; ;;; ;;; ;;; ;;
+						if (status == sf::Socket::Status::Done) {
+							clientsMap[senderPort] = from;
+							spdlog::error("все норм");
+							for (const auto& [port, client] : clientsMap) {
+								udp.send(buffer, sz, client.value(), port);
+							}
+						}
+					}
+				}
+			}
+			});
+	}
 	while (true) {
 		listener.listen(Server::port);
 		sf::TcpSocket* clientSocket = new sf::TcpSocket;
-		if (listener.accept(*clientSocket) == sf::Socket::Done) {
-			spdlog::error("new client = {}:{}", clientSocket->getRemoteAddress().toString(), Server::port);
+		if (listener.accept(*clientSocket) == sf::Socket::Status::Done) {
+			spdlog::error("new client = {}:{}", clientSocket->getRemoteAddress().value().toString(), Server::port);
 			clients.push_back(clientSocket);
+			//udpClients.push_back(new sf::UdpSocket());
 			std::thread([clientSocket, this]() {this->hClient(clientSocket, std::ref(clients)); }).detach();
 		}
 	}
@@ -23,7 +54,7 @@ void Server::hClient(sf::TcpSocket* cSock, std::vector<sf::TcpSocket*>& clients)
 		sf::Packet     paket;
 		std::string requestStr;
 		json answer;
-		if (cSock->receive(paket) != sf::Socket::Done) {
+		if (cSock->receive(paket) != sf::Socket::Status::Done) {
 			spdlog::error("cannot receive packet");
 			break;
 		}
@@ -61,7 +92,7 @@ void Server::hClient(sf::TcpSocket* cSock, std::vector<sf::TcpSocket*>& clients)
 			{
 				answer["message"]["you"]["body"][i]["coords"]["x"] = player.getBody()[i].getPosition().x;
 				answer["message"]["you"]["body"][i]["coords"]["y"] = player.getBody()[i].getPosition().y;
-				answer["message"]["you"]["body"][i]["color"] = *((int32*) & player.getBody()[i].getFillColor());
+				answer["message"]["you"]["body"][i]["color"] = (player.getBody()[i].getFillColor()).toInteger();
 				answer["message"]["you"]["segmSize"] = player.getBody()[0].getRadius();
 			}
 			size_t pId = 0;
@@ -71,7 +102,7 @@ void Server::hClient(sf::TcpSocket* cSock, std::vector<sf::TcpSocket*>& clients)
 				{
 					answer["message"]["other"][pId]["body"][i]["coords"]["x"] = obj->getBody()[i].getPosition().x;
 					answer["message"]["other"][pId]["body"][i]["coords"]["y"] = obj->getBody()[i].getPosition().y;
-					answer["message"]["other"][pId]["body"][i]["color"] = *((int32*) & obj->getBody()[i].getFillColor());
+					answer["message"]["other"][pId]["body"][i]["color"] = obj->getBody()[i].getFillColor().toInteger();
 					answer["message"]["other"][pId]["segmSize"] = obj->getBody()[0].getRadius();
 				}
 				pId++;

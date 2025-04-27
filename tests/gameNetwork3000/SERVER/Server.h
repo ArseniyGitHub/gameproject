@@ -23,9 +23,10 @@ class Server {
 	std::mutex           messageMutex;
 	std::vector<std::string> messages;
 	sf::TcpListener           listener;
-	std::vector<sf::UdpSocket*>udpClients;
+	sf::UdpSocket udp;
 	std::vector<sf::TcpSocket*>   clients;
 	std::vector<Worm*> players;
+	std::thread udpThread;
 	unsigned __int16 port;
 	void broadcastMessage(json);
 	void broadcastMessage(json, sf::TcpSocket*);
@@ -33,5 +34,5 @@ class Server {
 
 public:
 	void start();
-	Server(unsigned __int16 port = 12345) : port(port) {}
+	Server(unsigned __int16 port = 222 * 3) : port(port) {}
 };
