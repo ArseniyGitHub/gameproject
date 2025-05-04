@@ -26,6 +26,7 @@ endif()
 
 project ("gameproject")
 file(GLOB_RECURSE SOURCES "src/*.cpp" "include/*.h")
+file(GLOB_RECURSE SHARED_SOURCES "tests/gameNetwork3000/SHARED/*.*")
 
 find_package(spdlog CONFIG REQUIRED)
 find_package(box2d CONFIG REQUIRED)
@@ -36,6 +37,7 @@ find_package(nlohmann_json CONFIG REQUIRED)
 find_package(unofficial-sqlite3 CONFIG REQUIRED)
 find_package(implot CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)
+find_package(Boost REQUIRED COMPONENTS uuid)
 #target_link_libraries(main PRIVATE OpenGL::GL)
 
 # Добавьте источник в исполняемый файл этого проекта.
@@ -44,8 +46,8 @@ add_executable (gameproject  "main.cpp" ${SOURCES})
 #add_executable (candle_test "tests/CandleTest.cpp")
 add_executable(network_test_server "tests/server_data/server.cpp" "tests/server_data/server.h" "tests/server_data/main.cpp")
 add_executable(network_test_client "tests/client_data/client.cpp" "tests/client_data/client.h" "tests/client_data/main.cpp" "tests/client_data/window.h" "tests/client_data/window.cpp")
-add_executable(test_client "tests/gameNetwork3000/CLIENT/Client.cpp" "tests/gameNetwork3000/CLIENT/Client.h" "tests/gameNetwork3000/CLIENT/Window.cpp" "tests/gameNetwork3000/CLIENT/Window.h" "tests/gameNetwork3000/CLIENT/main.cpp" "tests/gameNetwork3000/MATH/math.hpp" "parser2/mainParser.hpp")
-add_executable(test_server "tests/gameNetwork3000/SERVER/Server.cpp" "tests/gameNetwork3000/SERVER/Server.h" "tests/gameNetwork3000/SERVER/main.cpp" "tests/gameNetwork3000/MATH/math.hpp" "parser2/mainParser.hpp")
+add_executable(test_client "tests/gameNetwork3000/CLIENT/Client.cpp" "tests/gameNetwork3000/CLIENT/Client.h" "tests/gameNetwork3000/CLIENT/Window.cpp" "tests/gameNetwork3000/CLIENT/Window.h" "tests/gameNetwork3000/CLIENT/main.cpp" "parser2/mainParser.hpp" ${SHARED_SOURCES})
+add_executable(test_server "tests/gameNetwork3000/SERVER/Server.cpp" "tests/gameNetwork3000/SERVER/Server.h" "tests/gameNetwork3000/SERVER/main.cpp" "parser2/mainParser.hpp" ${SHARED_SOURCES})
 add_executable(OpenGL_main "tests/OpenGL/OpenGL_main")
 add_library(netparser STATIC "parser/netparser.h" "parser/parser.cpp" "parser/parserAPI.hpp")
 add_library(netparser2 STATIC "parser2/parserElem.hpp" "parser2/parserElem.cpp" "parser2/mainParser.hpp" "parser2/mainParser.cpp")
@@ -58,8 +60,8 @@ target_include_directories("gameproject" PRIVATE "include")
 target_link_libraries(gameproject PRIVATE spdlog::spdlog)
 target_link_libraries(network_test_server PRIVATE spdlog::spdlog SFML::System SFML::Network SFML::Graphics SFML::Window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot ImGui-SFML::ImGui-SFML)
 target_link_libraries(network_test_client PRIVATE spdlog::spdlog SFML::System SFML::Network SFML::Graphics SFML::Window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot ImGui-SFML::ImGui-SFML)
-target_link_libraries(test_client PRIVATE spdlog::spdlog SFML::System SFML::Network SFML::Graphics SFML::Window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot ImGui-SFML::ImGui-SFML netparser)
-target_link_libraries(test_server PRIVATE spdlog::spdlog SFML::System SFML::Network SFML::Graphics SFML::Window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot ImGui-SFML::ImGui-SFML netparser)
+target_link_libraries(test_client PRIVATE spdlog::spdlog SFML::System SFML::Network SFML::Graphics SFML::Window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot ImGui-SFML::ImGui-SFML netparser Boost::uuid)
+target_link_libraries(test_server PRIVATE spdlog::spdlog SFML::System SFML::Network SFML::Graphics SFML::Window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot ImGui-SFML::ImGui-SFML netparser Boost::uuid)
 target_link_libraries(test_parser PRIVATE spdlog::spdlog SFML::System SFML::Network SFML::Graphics SFML::Window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot ImGui-SFML::ImGui-SFML netparser)
 target_link_libraries(gameproject PRIVATE box2d::box2d)
 target_link_libraries(gameproject PRIVATE SFML::System SFML::Network SFML::Graphics SFML::Window)
@@ -73,7 +75,7 @@ target_link_libraries(OpenGL_main PRIVATE SFML::Graphics SFML::Window SFML::Syst
 
 include_directories("parser")
 include_directories("parser2")
-#target_link_libraries()
+include_directories("tests/gameNetwork3000/SHARED")
 
 
 

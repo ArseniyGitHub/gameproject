@@ -6,9 +6,10 @@
 #include <string>
 #include <queue>
 #include <spdlog/spdlog.h>
-#include "../PLAYER/Worm.cpp"
+#include "PLAYER/Worm.hpp"
 #include "mainParser.hpp"
 #include "Client.h"
+#include <nlohmann/json.hpp>
 
 template <typename type, typename type2> sf::Vector2<type> operator * (const sf::Vector2<type>& a, const sf::Vector2<type2>& b) {
 	sf::Vector2<type> ret;
@@ -46,7 +47,10 @@ class Window {
 	std::condition_variable requestCvUDP;
 public:
 	Window(size_t x = 800, size_t y = 800, std::wstring name = L"Epic game", sf::IpAddress _ip = sf::IpAddress::LocalHost, ui16 _port = 222 * 3) : windows(sf::VideoMode(sf::Vector2u(x, y)), name), ip(_ip), port(_port) {
-		
+
+	}
+	void initConnection() {
+
 	}
 	void initThreads() {
 		udp.bind(port);
@@ -143,6 +147,8 @@ public:
 		PARSER_V2::Parser netparser;
 		PARSER_V2::bytesVec bytes;
 
+
+
 		windows.setFramerateLimit(120);
 
 		while (windows.isOpen()) {
@@ -162,7 +168,7 @@ public:
 			//spdlog::info("coords: x={}, y={}", player->getPosition().x, player->getPosition().y);
 
 			sf::Vector2i currentChank(cam.getCenter().x / ground.getSize().x, cam.getCenter().y / ground.getSize().y);
-			sf::Vector2i screenChanks(windows.getSize().x / ground.getSize().x + 4 * player->getDimentinalK(), windows.getSize().y / ground.getSize().y + 4 * player->getDimentinalK());
+			sf::Vector2i screenChanks(windows.getSize().x / ground.getSize().x + 4 * player->_getDimentinalK(), windows.getSize().y / ground.getSize().y + 4 * player->_getDimentinalK());
 
 
 			for (unsigned __int32 x = 0; x < screenChanks.x; x++) {

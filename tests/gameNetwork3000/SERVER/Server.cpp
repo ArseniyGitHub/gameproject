@@ -2,8 +2,11 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
 #include <SFML/Network.hpp>
-#include "../MATH/math.hpp"
+#include <MATH/math.hpp>
 #include <unordered_map>
+#include <mainParser.hpp>
+
+using namespace PARSER_V2;
 
 void Server::start() {
 	if (udp.bind(port) == sf::Socket::Status::Done) {
@@ -16,18 +19,43 @@ void Server::start() {
 			while (true) {
 				if (selector.wait(sf::milliseconds(10))) {
 					if (selector.isReady(udp)) {
-						std::byte buffer[1024];
+						std::vector<std::byte> buffer(1024 * 4);
 						size_t sz;
 						std::optional<sf::IpAddress> from;
 						unsigned __int16 senderPort;
-						auto status = udp.receive(buffer, 1024, sz, from, senderPort);
+						auto status = udp.receive(buffer.data(), 1024 * 4, sz, from, senderPort);
 						;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; ;;;;;;; ;; ;; ; ; ; ; ; ; ; ; ; ;; ; ; ; ; ; ; ; ;;;;;;; ;;; ;; ;;; ;;; ;;; ;;;;;;;;;;;; ;; ;;;; ;;; ;;; ;;;;;;;;; ;;; ;;; ;;; ;;; ;;;;;;; ; ;; ; ;; ;;; ;; ;; ;; ;;;;;;;;;;; ;; ;; ;;;; ;; ;; ;; ;; ;;; ;;; ;;; ;;
 						if (status == sf::Socket::Status::Done) {
 							clientsMap[senderPort] = from;
 							spdlog::error("все норм");
-							for (const auto& [port, client] : clientsMap) {
-								udp.send(buffer, sz, client.value(), port);
+							Parser p;
+							try {
+								p.parse(reinterpret_cast<bytesVec*>(&buffer), 0);
+								for (const auto& [port, client] : clientsMap) {
+									udp.send(buffer.data(), sz, client.value(), port);
+								}
+
+								if (p.isPackage()) {
+									if (p.contains("coords")) {
+										std::vector<float> data;
+										p["coords"].exportData(data);
+										for (size_t i = 0; i + 1 < data.size(); i += 2) {
+											spdlog::error("[{}]: x = {}, y = {}", i / 2, data[i], data[i + 1]);
+										}
+										spdlog::warn("end of packet");
+									}
+									else {
+										spdlog::info("нет блока \"coords\"!");
+									}
+								}
+								else {
+									spdlog::info("нет блока данных!");
+								}
 							}
+							catch (const std::exception& ex) {
+								spdlog::info("всё 100% норм(но это не точно): {}", ex.what());
+							}
+							
 						}
 					}
 				}
@@ -47,7 +75,7 @@ void Server::start() {
 }
 
 void Server::hClient(sf::TcpSocket* cSock, std::vector<sf::TcpSocket*>& clients) {
-	Worm player;
+	Player player;
 	players.push_back(&player);
 	sf::Clock timer;
 	while (true) {
@@ -60,11 +88,12 @@ void Server::hClient(sf::TcpSocket* cSock, std::vector<sf::TcpSocket*>& clients)
 		}
 		paket >> requestStr;
 		if (requestStr.empty()) continue;
-
+		
 		try {
 			json req = json::parse(requestStr);
 			std::string action = req["action"];
 			//answer["action"] = req["action"];
+			/*
 			if (action == "moving") {
 				float x = req["message"]["x"];
 				float y = req["message"]["y"];
@@ -83,11 +112,13 @@ void Server::hClient(sf::TcpSocket* cSock, std::vector<sf::TcpSocket*>& clients)
 				player.setTargetPos(sf::Vector2f(x, y));
 				player.update(timer.restart().asSeconds());
 			}
+			
 
 			//
 
 			answer["action"] = "playersData";
 			answer["status"] = "normal";
+			
 			for (size_t i = 0; i < player.getBody().size(); i++)
 			{
 				answer["message"]["you"]["body"][i]["coords"]["x"] = player.getBody()[i].getPosition().x;
@@ -107,6 +138,7 @@ void Server::hClient(sf::TcpSocket* cSock, std::vector<sf::TcpSocket*>& clients)
 				}
 				pId++;
 			}
+			*/
 			
 			//
 
@@ -124,6 +156,7 @@ void Server::hClient(sf::TcpSocket* cSock, std::vector<sf::TcpSocket*>& clients)
 	}
 	delete cSock;
 }
+
 
 void Server::broadcastMessage(json answer) {
 	sf::Packet p;

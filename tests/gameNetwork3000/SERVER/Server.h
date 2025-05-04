@@ -14,7 +14,9 @@
 #include <fmt/core.h>
 #include <imgui_freetype.h>
 #include <box2d/box2d.h>
-#include "../PLAYER/Worm.cpp"
+#include <boost/uuid.hpp>
+#include <time.h>
+#include <models/Player.hpp>
 
 using json = nlohmann::json;
 
@@ -25,7 +27,7 @@ class Server {
 	sf::TcpListener           listener;
 	sf::UdpSocket udp;
 	std::vector<sf::TcpSocket*>   clients;
-	std::vector<Worm*> players;
+	std::vector<Player*> players;
 	std::thread udpThread;
 	unsigned __int16 port;
 	void broadcastMessage(json);
@@ -35,4 +37,22 @@ class Server {
 public:
 	void start();
 	Server(unsigned __int16 port = 222 * 3) : port(port) {}
+};
+
+class P_L_A_Y_E_R {
+public:
+	static boost::uuids::random_generator generatorUUID;
+	std::vector<float> coords;
+	std::optional<sf::IpAddress> ip;
+	unsigned short port;
+	boost::uuids::uuid guid;
+	std::string name;
+	P_L_A_Y_E_R(std::string name = "unknow amogus 321(sus)",
+		const std::optional<sf::IpAddress>& ip = std::optional<sf::IpAddress>(sf::IpAddress::LocalHost),
+		const unsigned short port = 222 * 3, boost::uuids::uuid id = generatorUUID()) :
+		ip(ip), port(port), name(name), guid(id) {;;}
+};
+
+class Game_State {
+	std::vector<P_L_A_Y_E_R> players;
 };
