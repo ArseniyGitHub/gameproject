@@ -13,9 +13,10 @@ class Player {
 	boost::uuids::uuid id;
 	std::optional<sf::IpAddress> ip;
 	unsigned short port;
-	std::vector<Worm_Segment> body;
-	float rad = 1;
+	
 public:
+	float rad = 1;
+	std::vector<Worm_Segment> body;
 	static boost::uuids::uuid generatorUUID() {
 		static boost::uuids::random_generator generator;
 		return generator();
@@ -25,5 +26,12 @@ public:
 		unsigned short port = 222 * 3,
 		boost::uuids::uuid id = generatorUUID(),
 		float rad = 1) : name(name), id(id), ip(ip), port(port), rad(rad) {}
-	
+	const std::string& getName() const { return name; }
+	const boost::uuids::uuid& getUUID() const { return id; }
+	void setUUID(const boost::uuids::uuid& id) { this->id = id; }
+	void setName(const std::string& str) { name = str; }
+	const std::optional<sf::IpAddress>& getIP() const { return ip; }
+	void setIP(const sf::IpAddress& nip) { ip = nip; }
+	const unsigned short getPort() const { return port; }
+	void setPort(const unsigned short port) { this->port = port; }
 };

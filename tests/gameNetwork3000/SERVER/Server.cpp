@@ -5,6 +5,7 @@
 #include <MATH/math.hpp>
 #include <unordered_map>
 #include <mainParser.hpp>
+#include <algorithm>
 
 using namespace PARSER_V2;
 
@@ -24,7 +25,6 @@ void Server::start() {
 						std::optional<sf::IpAddress> from;
 						unsigned __int16 senderPort;
 						auto status = udp.receive(buffer.data(), 1024 * 4, sz, from, senderPort);
-						;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; ;;;;;;; ;; ;; ; ; ; ; ; ; ; ; ; ;; ; ; ; ; ; ; ; ;;;;;;; ;;; ;; ;;; ;;; ;;; ;;;;;;;;;;;; ;; ;;;; ;;; ;;; ;;;;;;;;; ;;; ;;; ;;; ;;; ;;;;;;; ; ;; ; ;; ;;; ;; ;; ;; ;;;;;;;;;;; ;; ;; ;;;; ;; ;; ;; ;; ;;; ;;; ;;; ;;
 						if (status == sf::Socket::Status::Done) {
 							clientsMap[senderPort] = from;
 							spdlog::error("все норм");
@@ -74,9 +74,59 @@ void Server::start() {
 	}
 }
 
+json Server::processInit(const json& msg, sf::TcpSocket& sock) {
+	if (msg.contains("name")) {
+		std::string name = msg["name"];
+		auto player = std::find_if(this->players.begin(), this->players.end(), [&](Player* o) {return o->getName() == name; });
+		if (this->players.end() != player) {
+			json answer;
+			answer["action"] = "init";
+			answer["status"] = "you are noob hacker :)";
+
+			return answer;
+		}
+		else {
+			json answer;
+			answer["action"] = "init";
+			answer["status"] = "OK, you beat me";
+			spdlog::info("new initialized client!");
+			Player* obj = new Player(name, sock.getRemoteAddress(), sock.getRemotePort());
+			this->players.push_back(obj);
+			answer["data"]["uuid"] = obj->getUUID();
+			answer["data"]["ip"] = obj->getIP().value().toString();
+			answer["data"]["port"] = obj->getPort();
+			
+			return answer;
+		}
+	}
+	else {
+		json answer;
+		answer["action"] = "init";
+		answer["status"] = "Your connection has some problems... Please try hacking later";
+
+		return answer;
+	}
+}
+
+json Server::processReq(const json& msg, sf::TcpSocket& sock) {
+	json answer;
+	if (!msg.contains("action")) {
+		answer["action"] = "info";
+		answer["status"] = "error";
+		answer["info"] = "cant process request";
+		return answer;
+	}
+	std::string action = msg["action"];
+
+	if (action == "init") return processInit(msg, sock);
+	
+	answer["action"] = "info";
+	answer["status"] = "error";
+	answer["info"] = "cant process request";
+	return answer;
+}
+
 void Server::hClient(sf::TcpSocket* cSock, std::vector<sf::TcpSocket*>& clients) {
-	Player player;
-	players.push_back(&player);
 	sf::Clock timer;
 	while (true) {
 		sf::Packet     paket;
@@ -91,69 +141,24 @@ void Server::hClient(sf::TcpSocket* cSock, std::vector<sf::TcpSocket*>& clients)
 		
 		try {
 			json req = json::parse(requestStr);
+			spdlog::info("какой-то пакет пришёл, надо изучить...({}:{})", cSock->getRemoteAddress().value().toString(), cSock->getRemotePort());
 			std::string action = req["action"];
-			//answer["action"] = req["action"];
-			/*
-			if (action == "moving") {
-				float x = req["message"]["x"];
-				float y = req["message"]["y"];
-				size_t segments = req["message"]["segments"];
-				size_t lSize = player.getBody().size();
-				if (lSize != segments) {
-					player.getBody().resize(segments);
-					if (lSize < segments) {
-						for (size_t i = lSize; i < segments; i++)
-						{
-							player.getBody()[i].setPosition(player.getBody()[lSize - 1].getPosition());
-							player.getBody()[i].setFillColor(sf::Color(std::rand() % 255, std::rand() % 255, std::rand() % 255, std::rand() % 255));
-						}
-					}
-				}
-				player.setTargetPos(sf::Vector2f(x, y));
-				player.update(timer.restart().asSeconds());
+			if (action == "init") {
+				answer = processInit(req, *cSock);
 			}
-			
-
-			//
-
-			answer["action"] = "playersData";
-			answer["status"] = "normal";
-			
-			for (size_t i = 0; i < player.getBody().size(); i++)
-			{
-				answer["message"]["you"]["body"][i]["coords"]["x"] = player.getBody()[i].getPosition().x;
-				answer["message"]["you"]["body"][i]["coords"]["y"] = player.getBody()[i].getPosition().y;
-				answer["message"]["you"]["body"][i]["color"] = (player.getBody()[i].getFillColor()).toInteger();
-				answer["message"]["you"]["segmSize"] = player.getBody()[0].getRadius();
-			}
-			size_t pId = 0;
-			for (Worm* obj : players) {
-				if (obj == &player) continue;
-				for (size_t i = 0; i < obj->getBody().size(); i++)
-				{
-					answer["message"]["other"][pId]["body"][i]["coords"]["x"] = obj->getBody()[i].getPosition().x;
-					answer["message"]["other"][pId]["body"][i]["coords"]["y"] = obj->getBody()[i].getPosition().y;
-					answer["message"]["other"][pId]["body"][i]["color"] = obj->getBody()[i].getFillColor().toInteger();
-					answer["message"]["other"][pId]["segmSize"] = obj->getBody()[0].getRadius();
-				}
-				pId++;
-			}
-			*/
-			
-			//
-
 		}
 		catch (const json::parse_error& ex) {
 			answer["action"] = "exception";
 			answer["status"] = "error";
 			answer["message"] = "invalid json format";
 		}
-		
-		
 
+		paket.clear();
 		paket << answer.dump();
 		cSock->send(paket);
 	}
+
+end:
 	delete cSock;
 }
 

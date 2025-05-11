@@ -12,7 +12,6 @@
 #include <iostream>
 #include <fstream>
 #include <fmt/core.h>
-#include <imgui_freetype.h>
 #include <box2d/box2d.h>
 #include <boost/uuid.hpp>
 #include <time.h>
@@ -33,6 +32,8 @@ class Server {
 	void broadcastMessage(json);
 	void broadcastMessage(json, sf::TcpSocket*);
 	void hClient(sf::TcpSocket* cSock, std::vector<sf::TcpSocket*>& clients);
+	json processInit(const json& msg, sf::TcpSocket& sock);
+	json processReq(const json& msg, sf::TcpSocket& sock);
 
 public:
 	void start();

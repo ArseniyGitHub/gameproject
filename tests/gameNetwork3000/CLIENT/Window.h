@@ -10,6 +10,10 @@
 #include "mainParser.hpp"
 #include "Client.h"
 #include <nlohmann/json.hpp>
+#include <models/Player.cpp>
+#include <format>
+
+using json = nlohmann::json;
 
 template <typename type, typename type2> sf::Vector2<type> operator * (const sf::Vector2<type>& a, const sf::Vector2<type2>& b) {
 	sf::Vector2<type> ret;
@@ -37,6 +41,9 @@ class Window {
 	std::thread listener;
 	std::thread udpListener;
 	std::atomic<bool> active = false;
+	bool isInitialized = false;
+	unsigned short threadsInitialized = 0;
+	bool tcpConnection = false;
 
 	std::queue<std::string>  requestsTCP;
 	std::mutex           requestMutexTCP;
@@ -49,20 +56,52 @@ public:
 	Window(size_t x = 800, size_t y = 800, std::wstring name = L"Epic game", sf::IpAddress _ip = sf::IpAddress::LocalHost, ui16 _port = 222 * 3) : windows(sf::VideoMode(sf::Vector2u(x, y)), name), ip(_ip), port(_port) {
 
 	}
-	void initConnection() {
+	void processResponceTCP(sf::Packet& packet) {
+		std::string data;
+		packet >> data;
+		if (isInitialized) {
 
+		}
+		else {
+			try {
+				json responce;
+				responce = json::parse(data);
+				spdlog::info("packet: {}", responce.dump(4));
+				if (!responce.contains("action"))return;
+				std::string action = responce["action"];
+				if (action == "init") {
+					if (!responce.contains("status")) {
+						spdlog::error("incorrect msg from server, restart app");
+						active = false;
+					}
+					std::string status = responce["status"];
+					if (status == "OK, you beat me") {
+						isInitialized = true;
+						spdlog::info("все хорошо, мы подключены");
+					}
+					else if (status == "you are noob hacker :)") {
+						spdlog::error("incorrect name!");
+					}
+				}
+			}
+			catch (const std::exception& ex) {
+				spdlog::error("incorrect initializing packet: {}", ex.what());
+			}
+		}
 	}
 	void initThreads() {
 		udp.bind(port);
 		udp.setBlocking(false);
 		network = std::thread([this]() {
+			threadsInitialized++;
 		connect:
 			auto status = tcp.connect(ip, port);
 			if (status != sf::Socket::Status::Done) {
 				std::this_thread::sleep_for(std::chrono::milliseconds(1000));   goto connect;
 			}
+			tcpConnection = true;
 			while (active.load()) {
-				std::string req/* = "what time is now?"*/;
+				std::string req;
 				{
 					std::unique_lock <std::mutex> lock(requestMutexTCP);
 					requestCvTCP.wait(lock, [this]() {return !requestsTCP.empty() || !active; });
@@ -81,10 +120,13 @@ public:
 			});
 
 		listener = std::thread([this]() {
+			threadsInitialized++;
+			while (!tcpConnection)std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			while (active.load()) {
 				sf::Packet response;
 				if (tcp.receive(response) == sf::Socket::Status::Done) {
 					spdlog::error("все ок");
+					processResponceTCP(response);
 				}
 				else {
 					spdlog::info("все не очень хорошо...");
@@ -93,6 +135,7 @@ public:
 			});
 
 		udpNet = std::thread([this]() {
+			threadsInitialized++;
 			while (active.load()) {
 				std::unique_lock <std::mutex> lock(requestMutexUDP);
 				requestCvUDP.wait(lock, [this]() { return !requestsUDP.empty() || !active; });
@@ -105,6 +148,7 @@ public:
 			});
 
 		udpListener = std::thread([this]() {
+			threadsInitialized++;
 			while (active.load()) {
 				sf::Packet receiveP;
 				std::optional<sf::IpAddress> senderIp;
@@ -126,13 +170,28 @@ public:
 				}
 			}
 			});
+		while (threadsInitialized != 4)std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	}
+	void sendTcpMsg(const std::string& msg) {
+		{
+			std::lock_guard<std::mutex> lock(requestMutexTCP);
+			requestsTCP.push(msg);
+		}
+		requestCvTCP.notify_one();
 	}
 	void mainLoop() {
 		system("chcp 65001");
 		active = true;
 		initThreads();
+		{
+			json frstReq;
+			frstReq["action"] = "init";
+			frstReq["name"] = std::format("some random {} {}, who lives in street {} {}", (std::rand() % 2) ? "amogus" : "abobus", (int)std::rand(), (std::rand() % 2) ? "Freddy Fazber" : "Pushkina", (int)std::rand());
+			sendTcpMsg(frstReq.dump());
+		}
 		std::shared_ptr<Worm> player;
-		player = std::make_shared<Worm>(100, sf::Vector2f(windows.getSize().x / 2, windows.getSize().y / 2));
+		player = std::make_shared<Worm>(5, sf::Vector2f(windows.getSize().x / 2, windows.getSize().y / 2));
+		while (!isInitialized) std::this_thread::sleep_for(std::chrono::milliseconds(500));
 		Camera cam(windows);
 		cam.setTargetObject(player);
 		sf::Vector2f windowS;
