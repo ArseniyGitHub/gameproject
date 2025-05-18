@@ -12,6 +12,7 @@
 #include <nlohmann/json.hpp>
 #include <models/Player.cpp>
 #include <format>
+#include <time.h>
 
 using json = nlohmann::json;
 
@@ -44,6 +45,7 @@ class Window {
 	bool isInitialized = false;
 	unsigned short threadsInitialized = 0;
 	bool tcpConnection = false;
+	boost::uuids::uuid myID;
 
 	std::queue<std::string>  requestsTCP;
 	std::mutex           requestMutexTCP;
@@ -52,6 +54,9 @@ class Window {
 	std::queue<PARSER_V2::bytesVec>   requestsUDP;
 	std::mutex           requestMutexUDP;
 	std::condition_variable requestCvUDP;
+	
+
+	PARSER_V2::Parser playersData;
 public:
 	Window(size_t x = 800, size_t y = 800, std::wstring name = L"Epic game", sf::IpAddress _ip = sf::IpAddress::LocalHost, ui16 _port = 222 * 3) : windows(sf::VideoMode(sf::Vector2u(x, y)), name), ip(_ip), port(_port) {
 
@@ -78,6 +83,7 @@ public:
 					if (status == "OK, you beat me") {
 						isInitialized = true;
 						spdlog::info("все хорошо, мы подключены");
+						myID = std::bit_cast<boost::uuids::uuid, std::array<ui8, 16>>(responce["data"]["uuid"].get<std::array<ui8, 16>>());
 					}
 					else if (status == "you are noob hacker :)") {
 						spdlog::error("incorrect name!");
@@ -154,7 +160,6 @@ public:
 				std::optional<sf::IpAddress> senderIp;
 				unsigned short senderPort;
 				if (udp.receive(receiveP, senderIp, senderPort) != sf::Socket::Status::Done) {
-					//spdlog::info("err");
 					continue;
 				}
 				else {
@@ -162,7 +167,11 @@ public:
 					try {
 						PARSER_V2::Parser p;
 						p.parse(&v, 0);
-
+						if (!p.contains("action")) continue;
+						if (*p["action"].getAs<std::string>() == "playerInfo") {
+							if (!p.contains("data"))return;
+							playersData = p["data"];
+						}
 					}
 					catch (const std::exception& ex) {
 						spdlog::info("cant parse received data: {}", ex.what());
@@ -186,10 +195,11 @@ public:
 		{
 			json frstReq;
 			frstReq["action"] = "init";
-			frstReq["name"] = std::format("some random {} {}, who lives in street {} {}", (std::rand() % 2) ? "amogus" : "abobus", (int)std::rand(), (std::rand() % 2) ? "Freddy Fazber" : "Pushkina", (int)std::rand());
+			frstReq["name"] = std::format("some random {} {}, who lives in street {} {}", (std::rand() % 2) ? "amogus" : "abobus", (int)std::rand(), (std::rand() % 2) ? "Freddy Fazber" : "Pushkina", (int)std::rand() + (int)time(nullptr));
 			sendTcpMsg(frstReq.dump());
 		}
 		std::shared_ptr<Worm> player;
+		Worm bufferPlayer;
 		player = std::make_shared<Worm>(5, sf::Vector2f(windows.getSize().x / 2, windows.getSize().y / 2));
 		while (!isInitialized) std::this_thread::sleep_for(std::chrono::milliseconds(500));
 		Camera cam(windows);
@@ -216,7 +226,7 @@ public:
 			time += elapsedTime;
 			while (const std::optional e = windows.pollEvent()) {
 				if (e->is<sf::Event::Closed>()) {
-					//windows.close();
+					windows.close();
 				}
 				
 			}
@@ -240,6 +250,16 @@ public:
 			
 
 			player->draw(windows);
+
+			if (playersData.isPackage()) {
+				std::vector<float> coords;
+				for (size_t i = 0; i < playersData.getPackage()->size(); i++) {
+					playersData[i].exportData(coords);
+					bufferPlayer.importBody(coords);
+					bufferPlayer.draw(windows);
+				}
+			}
+
 			windows.display();
 			cam.update(windows, elapsedTime.asSeconds());
 			if (parserTimer.getElapsedTime().asMilliseconds() >= 1000 / 60) {
@@ -252,7 +272,9 @@ public:
 					coords[i + 1] = (float)player->getBody()[i / 2].getPosition().y;
 				}
 				netparser["coords"] = coords;
+				netparser["uuid"] = PARSER_V2::bytesArr<16>((ui8*)(void*)&myID);
 				netparser.pack(&bytes, 0);
+				spdlog::info("parsing");
 
 				{
 					std::lock_guard<std::mutex> lock(requestMutexUDP);
@@ -260,7 +282,6 @@ public:
 				}
 				
 				requestCvUDP.notify_one();
-				//spdlog::error("PARSING!!!\nPARSING!!!");
 				parserTimer.restart();
 				bytes.clear();
 			}

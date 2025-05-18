@@ -9,6 +9,22 @@
 
 using namespace PARSER_V2;
 
+Parser* Server::getPlayersData() {
+	Parser* data = new Parser;
+	(*data)["action"] = std::string("playerInfo");
+	std::vector<float> coords;
+	for (size_t i = 0; i < players.size(); i++) {
+		for (size_t o = 0; o < players[i]->body.size(); o++) {
+			coords.clear();
+			coords[i * 2] = players[i]->body[o].x;
+			coords[i * 2 + 1] = players[i]->body[o].y;
+		}
+		(*data)["data"][i]["coords"] = coords;
+		(*data)["data"][i]["name"] = players[i]->getName();
+	}
+	return data;
+}
+
 void Server::start() {
 	if (udp.bind(port) == sf::Socket::Status::Done) {
 		udp.setBlocking(false);
@@ -25,15 +41,15 @@ void Server::start() {
 						std::optional<sf::IpAddress> from;
 						unsigned __int16 senderPort;
 						auto status = udp.receive(buffer.data(), 1024 * 4, sz, from, senderPort);
+						
+
 						if (status == sf::Socket::Status::Done) {
 							clientsMap[senderPort] = from;
 							spdlog::error("все норм");
 							Parser p;
 							try {
 								p.parse(reinterpret_cast<bytesVec*>(&buffer), 0);
-								for (const auto& [port, client] : clientsMap) {
-									udp.send(buffer.data(), sz, client.value(), port);
-								}
+								
 
 								if (p.isPackage()) {
 									if (p.contains("coords")) {
@@ -43,6 +59,15 @@ void Server::start() {
 											spdlog::error("[{}]: x = {}, y = {}", i / 2, data[i], data[i + 1]);
 										}
 										spdlog::warn("end of packet");
+										for (Player* e : players) {
+											if (e->getUUID() != *p["uuid"].getAs<boost::uuids::uuid>()) continue;
+											e->body.clear();
+											e->body.resize(data.size() / 2);
+											for (size_t i = 0; i < data.size() / 2; i++) {
+												e->body[i].x = data[i * 2];
+												e->body[i].y = data[i * 2 + 1];
+											}
+										}
 									}
 									else {
 										spdlog::info("нет блока \"coords\"!");
@@ -56,6 +81,14 @@ void Server::start() {
 								spdlog::info("всё 100% норм(но это не точно): {}", ex.what());
 							}
 							
+						}
+
+						Parser* packet = getPlayersData();
+						bytesVec packetD;
+						packet->pack(&packetD, 0);
+
+						for (const auto& [port, client] : clientsMap) {
+							udp.send(packetD.data(), sz, client.value(), port);
 						}
 					}
 				}

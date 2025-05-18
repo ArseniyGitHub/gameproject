@@ -130,7 +130,7 @@ namespace PARSER_V2 {
 		}
 		static constexpr size_t _defByteCopyParse(bytesVec* whr, size_t id, type* obj, void* args, size_t szLimit = 0) {
 			if (whr == nullptr || obj == nullptr) return 0;;
-			const byte_type* from = &(*whr)[id];
+			const byte_type* from = &((*whr)[id]);
 			if (szLimit == 0) {
 				*obj = *std::bit_cast<const type*>(from);
 				return sizeof(type);

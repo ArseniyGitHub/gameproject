@@ -1,3 +1,4 @@
+/*
 #pragma once
 #include <SFML/Network.hpp>
 #include <imgui.h>
@@ -86,7 +87,7 @@ public:
 	bool receiveResponse(sf::Packet& packet) {
 		return socket.receive(packet) == sf::Socket::Done;
 	}
-	*/
+	*//*
 	void processServerResponse(sf::Packet& packet) {
 		std::string responseMessage;
 		packet >> responseMessage;
@@ -172,3 +173,4 @@ public:
 	}
 };
 
+*/

@@ -36,6 +36,17 @@ public:
 			body.emplace_back(std::move(buffer));
 		}
 	}
+	void importBody(const std::vector<float>& coords) {
+		body.clear();
+		body.resize(coords.size() / 2);
+		sf::Color randColor(rand(), rand(), rand());
+		for (size_t i = 0; i < body.size(); i++) {
+			body[i].setPosition(sf::Vector2f(coords[i * 2], coords[i * 2 + 1]));
+			body[i].setOrigin({(float)body.size() / 2, (float)body.size() / 2});
+			body[i].setRadius(body.size() / 2);
+			body[i].setFillColor(sf::Color(randColor.r * i, randColor.g * i, randColor.b * i, 210));
+		}
+	}
 	const sf::Vector2f& _getTargetPos() const {
 		return targetPos;
 	}

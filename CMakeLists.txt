@@ -1,7 +1,7 @@
 ﻿# CMakeList.txt: проект CMake для gameproject; включите исходный код и определения,
 # укажите здесь логику для конкретного проекта.
 #
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required (VERSION 3.16)
 
 # Включение горячей перезагрузки для компиляторов MSVC, если поддерживается.
 if(DEFINED ENV{VCPKG_HOME})
@@ -16,6 +16,19 @@ set             (VCPKG_BIN_DIR "$ENV{VCPKG_HOME}/installed/${VCPKG_TARGET_TRIPLE
 set (VCPKG_DEBUG_BIN_DIR "$ENV{VCPKG_HOME}/installed/${VCPKG_TARGET_TRIPLET}/debug/bin")
 set (VCPKG_DEBUG_LIB_DIR "$ENV{VCPKG_HOME}/installed/${VCPKG_TARGET_TRIPLET}/debug/lib")
 include_directories(VCPKG_INCLUDE_DIR)
+
+#set(IMGUI_DIR "${VCPKG_INCLUDE_DIR}")
+
+#include(FetchContent)
+#FetchContent_Declare(
+#    imgui-sfml
+#    GIT_REPOSITORY
+#    https://github.com/SFML/imgui-sfml.git
+#    GIT_TAG
+#    v3.0
+#)
+#FetchContent_MakeAvailable(imgui-sfml)
+
 #add_subdirectory("modules/Candle")
 
 
@@ -27,18 +40,19 @@ endif()
 project ("gameproject")
 file(GLOB_RECURSE SOURCES "src/*.cpp" "include/*.h")
 file(GLOB_RECURSE SHARED_SOURCES "tests/gameNetwork3000/SHARED/*.*")
+file(GLOB_RECURSE IMGUI_SFML_TEST_SOURCES "tests/OpenGL/Imgui-SFML/*.*")
 
 find_package(spdlog CONFIG REQUIRED)
 find_package(box2d CONFIG REQUIRED)
 find_package(SFML COMPONENTS Network Graphics Window Audio System CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
-find_package(ImGui-SFML CONFIG REQUIRED)
+#####################################################################################################################find_package(ImGui-SFML CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(unofficial-sqlite3 CONFIG REQUIRED)
 find_package(implot CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(Boost REQUIRED COMPONENTS uuid)
-#target_link_libraries(main PRIVATE OpenGL::GL)
+find_package(OpenGL REQUIRED COMPONENTS OpenGL)
 
 # Добавьте источник в исполняемый файл этого проекта.
 add_executable (gameproject  "main.cpp" ${SOURCES})
@@ -52,26 +66,30 @@ add_executable(OpenGL_main "tests/OpenGL/OpenGL_main")
 add_library(netparser STATIC "parser/netparser.h" "parser/parser.cpp" "parser/parserAPI.hpp")
 add_library(netparser2 STATIC "parser2/parserElem.hpp" "parser2/parserElem.cpp" "parser2/mainParser.hpp" "parser2/mainParser.cpp")
 add_executable(test_parser "parser/parserAPI.hpp" "parser/test.cpp")
+add_executable(OpenGL_shader_test "tests/OpenGL/OpenGL_shader_test.cpp" ${IMGUI_SFML_TEST_SOURCES})
+
+target_include_directories(OpenGL_shader_test PRIVATE "tests/OpenGL")
 
 
 target_include_directories("gameproject" PRIVATE "include")
 ############################################################################################################################################################################################################################################################################################################################################################################################################################################################################################################################
 ######################################################################################################################################################################################
 target_link_libraries(gameproject PRIVATE spdlog::spdlog)
-target_link_libraries(network_test_server PRIVATE spdlog::spdlog SFML::System SFML::Network SFML::Graphics SFML::Window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot ImGui-SFML::ImGui-SFML)
-target_link_libraries(network_test_client PRIVATE spdlog::spdlog SFML::System SFML::Network SFML::Graphics SFML::Window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot ImGui-SFML::ImGui-SFML)
-target_link_libraries(test_client PRIVATE spdlog::spdlog SFML::System SFML::Network SFML::Graphics SFML::Window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot ImGui-SFML::ImGui-SFML netparser Boost::uuid)
-target_link_libraries(test_server PRIVATE spdlog::spdlog SFML::System SFML::Network SFML::Graphics SFML::Window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot ImGui-SFML::ImGui-SFML netparser Boost::uuid)
-target_link_libraries(test_parser PRIVATE spdlog::spdlog SFML::System SFML::Network SFML::Graphics SFML::Window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot ImGui-SFML::ImGui-SFML netparser)
+target_link_libraries(network_test_server PRIVATE spdlog::spdlog SFML::System SFML::Network SFML::Graphics SFML::Window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot)
+target_link_libraries(network_test_client PRIVATE spdlog::spdlog SFML::System SFML::Network SFML::Graphics SFML::Window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot)
+target_link_libraries(test_client PRIVATE spdlog::spdlog SFML::System SFML::Network SFML::Graphics SFML::Window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot netparser Boost::uuid)
+target_link_libraries(test_server PRIVATE spdlog::spdlog SFML::System SFML::Network SFML::Graphics SFML::Window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot netparser Boost::uuid)
+target_link_libraries(test_parser PRIVATE spdlog::spdlog SFML::System SFML::Network SFML::Graphics SFML::Window nlohmann_json::nlohmann_json unofficial::sqlite3::sqlite3 imgui::imgui implot::implot netparser)
 target_link_libraries(gameproject PRIVATE box2d::box2d)
 target_link_libraries(gameproject PRIVATE SFML::System SFML::Network SFML::Graphics SFML::Window)
 target_link_libraries(gameproject PRIVATE imgui::imgui)
-target_link_libraries(gameproject PRIVATE ImGui-SFML::ImGui-SFML)
+#target_link_libraries(gameproject PRIVATE ImGui-SFML::ImGui-SFML)
 target_link_libraries(gameproject PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(gameproject PRIVATE Candle-s)
 target_link_libraries(gameproject PRIVATE unofficial::sqlite3::sqlite3)
 target_link_libraries(gameproject PRIVATE implot::implot)
 target_link_libraries(OpenGL_main PRIVATE SFML::Graphics SFML::Window SFML::System spdlog::spdlog ${OPENGL_LIBRARIES})
+target_link_libraries(OpenGL_shader_test PRIVATE SFML::Graphics SFML::Window SFML::System spdlog::spdlog ${OPENGL_LIBRARIES} imgui::imgui implot::implot)
 
 include_directories("parser")
 include_directories("parser2")
@@ -107,6 +125,7 @@ if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET netparser2 PROPERTY CXX_STANDARD 23)
   set_property(TARGET test_parser PROPERTY CXX_STANDARD 23)
   set_property(TARGET OpenGL_main PROPERTY CXX_STANDARD 23)
+  set_property(TARGET OpenGL_shader_test PROPERTY CXX_STANDARD 23)
 endif()
 
 

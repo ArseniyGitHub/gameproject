@@ -16,6 +16,7 @@
 #include <boost/uuid.hpp>
 #include <time.h>
 #include <models/Player.hpp>
+#include <mainParser.hpp>
 
 using json = nlohmann::json;
 
@@ -28,10 +29,12 @@ class Server {
 	std::vector<sf::TcpSocket*>   clients;
 	std::vector<Player*> players;
 	std::thread udpThread;
+	std::thread playerInfoThread;
 	unsigned __int16 port;
 	void broadcastMessage(json);
 	void broadcastMessage(json, sf::TcpSocket*);
 	void hClient(sf::TcpSocket* cSock, std::vector<sf::TcpSocket*>& clients);
+	PARSER_V2::Parser* getPlayersData();
 	json processInit(const json& msg, sf::TcpSocket& sock);
 	json processReq(const json& msg, sf::TcpSocket& sock);
 
